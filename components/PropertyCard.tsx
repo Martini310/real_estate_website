@@ -22,9 +22,13 @@ export interface Property {
 
 interface PropertyCardProps {
   property: Property;
+  onPropertyClick?: (property: Property, imageRef: HTMLDivElement) => void;
 }
 
-export default function PropertyCard({ property }: PropertyCardProps) {
+export default function PropertyCard({
+  property,
+  onPropertyClick,
+}: PropertyCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLDivElement>(null);
 
@@ -40,6 +44,12 @@ export default function PropertyCard({ property }: PropertyCardProps) {
     };
   }, []);
 
+  const handleCardClick = () => {
+    if (onPropertyClick && imageRef.current) {
+      onPropertyClick(property, imageRef.current);
+    }
+  };
+
   const getTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
       apartment: "Apartment",
@@ -52,6 +62,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
   return (
     <div
       ref={cardRef}
+      onClick={handleCardClick}
       className="group relative h-[450px] md:h-[500px] lg:h-[calc(100vh/2)] min-h-[300px] w-full overflow-hidden bg-card-bg cursor-pointer"
     >
       {/* Image layer 120% height so parallax never reveals card background */}
