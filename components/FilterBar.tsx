@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export type FilterType = "all" | "apartment" | "house" | "commercial";
 export type StyleType = "all" | "log" | "modern" | "classic";
@@ -20,6 +20,14 @@ interface FilterBarProps {
 }
 
 export default function FilterBar({ activeFilters, onFiltersChange }: FilterBarProps) {
+  const [isOpen, setIsOpen] = useState(true);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setIsOpen(window.innerWidth >= 768);
+    }
+  }, []);
+
   const handleTypeChange = (type: FilterType) => {
     onFiltersChange({ ...activeFilters, type });
   };
@@ -50,6 +58,23 @@ export default function FilterBar({ activeFilters, onFiltersChange }: FilterBarP
     });
   };
 
+  const activeSummaryParts: string[] = [];
+  if (activeFilters.type !== "all") {
+    activeSummaryParts.push(activeFilters.type);
+  }
+  if (activeFilters.style !== "all") {
+    activeSummaryParts.push(activeFilters.style);
+  }
+  if (activeFilters.area !== "all") {
+    activeSummaryParts.push(activeFilters.area.replace("-", "–"));
+  }
+  if (activeFilters.bedrooms) {
+    activeSummaryParts.push(`${activeFilters.bedrooms} beds`);
+  }
+  if (activeFilters.floors) {
+    activeSummaryParts.push(`${activeFilters.floors} floors`);
+  }
+
   const filters: { label: string; value: FilterType }[] = [
     { label: "All", value: "all" },
     { label: "Apartment", value: "apartment" },
@@ -73,14 +98,14 @@ export default function FilterBar({ activeFilters, onFiltersChange }: FilterBarP
   ];
 
   return (
-    <div className="mb-12">
-      {/* Category Tabs */}
-      <div className="flex items-center justify-center gap-8 mb-8">
+    <div className="mb-10 md:mb-12">
+      {/* Category Tabs - always visible */}
+      <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8 mb-4 md:mb-6 text-xs md:text-sm">
         {filters.map((filter) => (
           <button
             key={filter.value}
             onClick={() => handleTypeChange(filter.value)}
-            className={`text-sm uppercase tracking-wider transition-colors duration-300 pb-2 border-b-2 ${
+            className={`uppercase tracking-wider transition-colors duration-300 pb-2 border-b-2 ${
               activeFilters.type === filter.value
                 ? "text-text-primary border-text-primary"
                 : "text-text-secondary border-transparent hover:text-text-primary hover:border-white/20"
@@ -91,253 +116,238 @@ export default function FilterBar({ activeFilters, onFiltersChange }: FilterBarP
         ))}
       </div>
 
-      {/* Advanced Filter Bar - Glassmorphism */}
-      <div className="relative">
+      {/* Toggle button for advanced filters (mobile only) */}
+      <div className="mb-4 flex items-center justify-between gap-3 md:hidden">
+        <button
+          type="button"
+          className="flex w-full items-center justify-between gap-2 rounded-lg border border-white/15 bg-black/25 px-4 py-2 text-xs text-text-primary hover:bg-white/5 transition-colors"
+          onClick={() => setIsOpen((open) => !open)}
+          aria-expanded={isOpen}
+        >
+          <span>{isOpen ? "Hide advanced filters" : "Show advanced filters"}</span>
+          <span
+            className={`flex h-5 w-5 items-center justify-center rounded-full bg-white/5 text-text-secondary transition-transform duration-200 ${
+              isOpen ? "rotate-180" : ""
+            }`}
+          >
+            <svg
+              width="10"
+              height="10"
+              viewBox="0 0 10 10"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M2 3L5 6L8 3"
+                stroke="currentColor"
+                strokeWidth="1.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </span>
+        </button>
+      </div>
+
+      {/* Advanced Filter Bar - visible on desktop, collapsible with animation on mobile */}
+      <div
+        className={`
+          relative overflow-hidden transition-all duration-1000
+          ${isOpen ? "max-h-[700px] opacity-100 translate-y-0" : "max-h-0 opacity-0 -translate-y-2"}
+          md:max-h-none md:opacity-100 md:translate-y-0
+        `}
+      >
         {/* Glassmorphism Background */}
-        <div 
-          className="absolute inset-0 rounded-2xl border border-white/10 shadow-2xl"
+        <div
+          className="absolute inset-0 rounded-2xl border border-white/15 shadow-2xl"
           style={{
-            background: 'rgba(255, 255, 255, 0.05)',
-            backdropFilter: 'blur(40px) saturate(180%)',
-            WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-            boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
+            background:
+              "linear-gradient(135deg, rgba(10,10,10,0), rgba(30,30,30,0))",
+            backdropFilter: "blur(26px) saturate(190%)",
+            WebkitBackdropFilter: "blur(26px) saturate(190%)",
+            boxShadow:
+              "0 18px 45px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255,255,255,0.04)",
           }}
         />
-        
+
         {/* Content */}
-        <div className="relative flex flex-wrap items-center gap-6 p-6">
-          {/* Style Dropdown */}
-          <div className="flex items-center gap-2">
-            <label className="text-text-secondary text-sm whitespace-nowrap">Style:</label>
-            <div className="relative">
-              <select
-                value={activeFilters.style}
-                onChange={(e) => handleStyleChange(e.target.value as StyleType)}
-                className="appearance-none px-4 py-2.5 pr-8 text-text-primary text-sm cursor-pointer transition-all duration-200 focus:outline-none rounded-lg min-w-[160px]"
-                style={{
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  backdropFilter: 'blur(20px) saturate(180%)',
-                  WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                }}
-                onFocus={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                }}
-              >
-                {styleOptions.map((option) => (
-                  <option key={option.value} value={option.value} className="bg-card-bg">
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                <svg
-                  width="10"
-                  height="10"
-                  viewBox="0 0 10 10"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
+        <div className="relative flex flex-col gap-4 p-4 md:flex-row md:flex-wrap md:items-center md:gap-6 md:p-6">
+            {/* Style Dropdown */}
+            <div className="flex flex-col md:flex-row md:items-center gap-2 w-full md:w-auto">
+              <label className="text-text-secondary text-xs md:text-sm whitespace-nowrap">
+                Style:
+              </label>
+              <div className="relative w-full md:w-auto">
+                <select
+                  value={activeFilters.style}
+                  onChange={(e) => handleStyleChange(e.target.value as StyleType)}
+                  className="appearance-none w-full md:w-auto px-4 py-2.5 pr-8 text-text-primary text-sm cursor-pointer transition-all duration-200 focus:outline-none rounded-lg min-w-[140px] md:min-w-[160px]"
+                  style={{
+                    background: "rgba(255, 255, 255, 0.05)",
+                    backdropFilter: "blur(20px) saturate(180%)",
+                    WebkitBackdropFilter: "blur(20px) saturate(180%)",
+                    border: "1px solid rgba(255, 255, 255, 0.12)",
+                  }}
                 >
-                  <path
-                    d="M2 3L5 6L8 3"
-                    stroke="currentColor"
-                    strokeWidth="1.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="text-text-secondary"
-                  />
-                </svg>
+                  {styleOptions.map((option) => (
+                    <option key={option.value} value={option.value} className="bg-card-bg">
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <svg
+                    width="10"
+                    height="10"
+                    viewBox="0 0 10 10"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M2 3L5 6L8 3"
+                      stroke="currentColor"
+                      strokeWidth="1.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="text-text-secondary"
+                    />
+                  </svg>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Area Dropdown */}
-          <div className="flex items-center gap-2">
-            <label className="text-text-secondary text-sm whitespace-nowrap">Area:</label>
-            <div className="relative">
-              <select
-                value={activeFilters.area}
-                onChange={(e) => handleAreaChange(e.target.value as AreaRange)}
-                className="appearance-none px-4 py-2.5 pr-8 text-text-primary text-sm cursor-pointer transition-all duration-200 focus:outline-none rounded-lg min-w-[160px]"
-                style={{
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  backdropFilter: 'blur(20px) saturate(180%)',
-                  WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                }}
-                onFocus={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                }}
-              >
-                {areaOptions.map((option) => (
-                  <option key={option.value} value={option.value} className="bg-card-bg">
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                <svg
-                  width="10"
-                  height="10"
-                  viewBox="0 0 10 10"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
+            {/* Area Dropdown */}
+            <div className="flex flex-col md:flex-row md:items-center gap-2 w-full md:w-auto">
+              <label className="text-text-secondary text-xs md:text-sm whitespace-nowrap">
+                Area:
+              </label>
+              <div className="relative w-full md:w-auto">
+                <select
+                  value={activeFilters.area}
+                  onChange={(e) => handleAreaChange(e.target.value as AreaRange)}
+                  className="appearance-none w-full md:w-auto px-4 py-2.5 pr-8 text-text-primary text-sm cursor-pointer transition-all duration-200 focus:outline-none rounded-lg min-w-[140px] md:min-w-[160px]"
+                  style={{
+                    background: "rgba(255, 255, 255, 0.05)",
+                    backdropFilter: "blur(20px) saturate(180%)",
+                    WebkitBackdropFilter: "blur(20px) saturate(180%)",
+                    border: "1px solid rgba(255, 255, 255, 0.12)",
+                  }}
                 >
-                  <path
-                    d="M2 3L5 6L8 3"
-                    stroke="currentColor"
-                    strokeWidth="1.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="text-text-secondary"
-                  />
-                </svg>
+                  {areaOptions.map((option) => (
+                    <option key={option.value} value={option.value} className="bg-card-bg">
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <svg
+                    width="10"
+                    height="10"
+                    viewBox="0 0 10 10"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M2 3L5 6L8 3"
+                      stroke="currentColor"
+                      strokeWidth="1.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="text-text-secondary"
+                    />
+                  </svg>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Bedrooms Selector */}
-          <div className="flex items-center gap-2">
-            <label className="text-text-secondary text-sm whitespace-nowrap">Bedrooms:</label>
-            <div className="flex items-center gap-1.5">
-              {[1, 2, 3, 4, 5].map((num) => (
-                <button
-                  key={num}
-                  onClick={() => handleBedroomsChange(activeFilters.bedrooms === num ? null : num)}
-                  className={`w-9 h-9 text-sm font-medium transition-all duration-200 border rounded-lg ${
-                    activeFilters.bedrooms === num
-                      ? "text-text-primary shadow-sm"
-                      : "text-text-secondary"
-                  }`}
-                  style={
-                    activeFilters.bedrooms === num
-                      ? {
-                          background: 'rgba(255, 255, 255, 0.15)',
-                          backdropFilter: 'blur(20px) saturate(180%)',
-                          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-                          border: '1px solid rgba(255, 255, 255, 0.2)',
-                        }
-                      : {
-                          background: 'rgba(255, 255, 255, 0.05)',
-                          backdropFilter: 'blur(10px) saturate(180%)',
-                          WebkitBackdropFilter: 'blur(10px) saturate(180%)',
-                          border: '1px solid rgba(255, 255, 255, 0.1)',
-                        }
-                  }
-                  onMouseEnter={(e) => {
-                    if (activeFilters.bedrooms !== num) {
-                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (activeFilters.bedrooms !== num) {
-                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                    }
-                  }}
-                >
-                  {num}
-                </button>
-              ))}
+            {/* Bedrooms Selector */}
+            <div className="flex flex-col md:flex-row md:items-center gap-2 w-full md:w-auto">
+              <label className="text-text-secondary text-xs md:text-sm whitespace-nowrap">
+                Bedrooms:
+              </label>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {[1, 2, 3, 4, 5].map((num) => {
+                  const isActive = activeFilters.bedrooms === num;
+                  return (
+                    <button
+                      key={num}
+                      onClick={() =>
+                        handleBedroomsChange(activeFilters.bedrooms === num ? null : num)
+                      }
+                      className={`w-9 h-9 text-xs md:text-sm font-medium transition-all duration-200 border rounded-lg ${
+                        isActive ? "text-text-primary shadow-sm" : "text-text-secondary"
+                      }`}
+                      style={
+                        isActive
+                          ? {
+                              background: "rgba(255, 255, 255, 0.18)",
+                              backdropFilter: "blur(20px) saturate(180%)",
+                              WebkitBackdropFilter: "blur(20px) saturate(180%)",
+                              border: "1px solid rgba(255, 255, 255, 0.35)",
+                            }
+                          : {
+                              background: "rgba(255, 255, 255, 0.05)",
+                              backdropFilter: "blur(10px) saturate(180%)",
+                              WebkitBackdropFilter: "blur(10px) saturate(180%)",
+                              border: "1px solid rgba(255, 255, 255, 0.15)",
+                            }
+                      }
+                    >
+                      {num}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
 
-          {/* Floors Selector */}
-          <div className="flex items-center gap-2">
-            <label className="text-text-secondary text-sm whitespace-nowrap">Floors:</label>
-            <div className="flex items-center gap-1.5">
-              {[1, 2, 3].map((num) => (
-                <button
-                  key={num}
-                  onClick={() => handleFloorsChange(activeFilters.floors === num ? null : num)}
-                  className={`w-9 h-9 text-sm font-medium transition-all duration-200 border rounded-lg ${
-                    activeFilters.floors === num
-                      ? "text-text-primary shadow-sm"
-                      : "text-text-secondary"
-                  }`}
-                  style={
-                    activeFilters.floors === num
-                      ? {
-                          background: 'rgba(255, 255, 255, 0.15)',
-                          backdropFilter: 'blur(20px) saturate(180%)',
-                          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-                          border: '1px solid rgba(255, 255, 255, 0.2)',
-                        }
-                      : {
-                          background: 'rgba(255, 255, 255, 0.05)',
-                          backdropFilter: 'blur(10px) saturate(180%)',
-                          WebkitBackdropFilter: 'blur(10px) saturate(180%)',
-                          border: '1px solid rgba(255, 255, 255, 0.1)',
-                        }
-                  }
-                  onMouseEnter={(e) => {
-                    if (activeFilters.floors !== num) {
-                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (activeFilters.floors !== num) {
-                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                    }
-                  }}
-                >
-                  {num}
-                </button>
-              ))}
+            {/* Floors Selector */}
+            <div className="flex flex-col md:flex-row md:items-center gap-2 w-full md:w-auto">
+              <label className="text-text-secondary text-xs md:text-sm whitespace-nowrap">
+                Floors:
+              </label>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {[1, 2, 3].map((num) => {
+                  const isActive = activeFilters.floors === num;
+                  return (
+                    <button
+                      key={num}
+                      onClick={() => handleFloorsChange(activeFilters.floors === num ? null : num)}
+                      className={`w-9 h-9 text-xs md:text-sm font-medium transition-all duration-200 border rounded-lg ${
+                        isActive ? "text-text-primary shadow-sm" : "text-text-secondary"
+                      }`}
+                      style={
+                        isActive
+                          ? {
+                              background: "rgba(255, 255, 255, 0.18)",
+                              backdropFilter: "blur(20px) saturate(180%)",
+                              WebkitBackdropFilter: "blur(20px) saturate(180%)",
+                              border: "1px solid rgba(255, 255, 255, 0.35)",
+                            }
+                          : {
+                              background: "rgba(255, 255, 255, 0.05)",
+                              backdropFilter: "blur(10px) saturate(180%)",
+                              WebkitBackdropFilter: "blur(10px) saturate(180%)",
+                              border: "1px solid rgba(255, 255, 255, 0.15)",
+                            }
+                      }
+                    >
+                      {num}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
+
+          {/* Clear Filters Button */}
+          <div className="flex w-full md:w-auto justify-end md:ml-auto">
+            <button
+              onClick={handleResetFilters}
+              className="mt-2 md:mt-0 px-4 py-2 text-xs md:text-sm font-medium text-text-secondary hover:text-text-primary transition-all duration-200 border rounded-lg bg-white/5 border-white/15"
+            >
+              Clear filters
+            </button>
           </div>
         </div>
-
-        {/* Clear Filters Button */}
-        <button
-          onClick={handleResetFilters}
-          className="absolute right-6 top-1/2 -translate-y-1/2 px-4 pt-2 pb-2 text-sm font-medium text-text-secondary hover:text-text-primary transition-all duration-200 border rounded-lg"
-          style={{
-            background: 'rgba(255, 255, 255, 0.05)',
-            backdropFilter: 'blur(20px) saturate(180%)',
-            WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-          }}
-        >
-          Clear Filters
-        </button>
       </div>
     </div>
   );
