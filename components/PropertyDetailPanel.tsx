@@ -6,31 +6,10 @@ import { gsap } from "gsap";
 import { SplitText } from "gsap/all";
 import AgentCard from "./AgentCard";
 import ContactForm from "./ContactForm";
-
-interface PropertyDetail {
-  id: number;
-  slug: string;
-  title: string;
-  location: string;
-  price: number;
-  area: number;
-  type: string;
-  bedrooms: number;
-  bathrooms: number;
-  yearBuilt: number;
-  description: string;
-  features: string[];
-  agent: {
-    name: string;
-    phone: string;
-    email: string;
-    image: string;
-  };
-  gallery: string[];
-}
+import { Property } from "@/types/property";
 
 interface PropertyDetailPanelProps {
-  property: PropertyDetail | null;
+  property: Property | null;
   onClose: () => void;
   sourceImageRef?: React.RefObject<HTMLDivElement>;
 }
@@ -268,7 +247,7 @@ export default function PropertyDetailPanel({
         <button
           onClick={handleBackClick}
           className="absolute top-6 left-6 z-30 text-text-primary hover:text-accent transition-colors p-2"
-          aria-label="Close detail panel"
+          aria-label="Zamknij panel szczegółów"
         >
           <svg
             className="w-6 h-6"
@@ -294,7 +273,7 @@ export default function PropertyDetailPanel({
           <div ref={imageContainerRef} className="relative w-full h-full" style={{ opacity: 1 }}>
             <Image
               src={property.gallery[currentImageIndex]}
-              alt={`${property.title} - Gallery image ${currentImageIndex + 1}`}
+              alt={`${property.title} – zdjęcie ${currentImageIndex + 1}`}
               fill
               className="object-cover"
               priority
@@ -307,7 +286,7 @@ export default function PropertyDetailPanel({
           <button
             onClick={handlePrevImage}
             className="absolute left-6 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full border border-white/20 text-text-primary hover:border-white/50 hover:bg-white/5 transition-all flex items-center justify-center"
-            aria-label="Previous image"
+            aria-label="Poprzednie zdjęcie"
           >
             <svg
               className="w-6 h-6"
@@ -328,7 +307,7 @@ export default function PropertyDetailPanel({
           <button
             onClick={handleNextImage}
             className="absolute right-6 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full border border-white/20 text-text-primary hover:border-white/50 hover:bg-white/5 transition-all flex items-center justify-center"
-            aria-label="Next image"
+            aria-label="Następne zdjęcie"
           >
             <svg
               className="w-6 h-6"
@@ -381,7 +360,7 @@ export default function PropertyDetailPanel({
                     ? "w-6 bg-accent"
                     : "w-2 bg-white/30 hover:bg-white/50"
                 }`}
-                aria-label={`Go to image ${idx + 1}`}
+                aria-label={`Przejdź do zdjęcia ${idx + 1}`}
               />
             ))}
           </div>
@@ -404,7 +383,7 @@ export default function PropertyDetailPanel({
           <div className="grid grid-cols-3 gap-4 mb-8 pb-8 border-b border-white/8">
             <div>
               <p className="text-text-secondary text-xs uppercase tracking-widest mb-2">
-                Area
+                Powierzchnia
               </p>
               <p className="text-text-primary text-2xl font-light">
                 {property.area} <span className="text-sm">m²</span>
@@ -412,7 +391,7 @@ export default function PropertyDetailPanel({
             </div>
             <div>
               <p className="text-text-secondary text-xs uppercase tracking-widest mb-2">
-                Bedrooms
+                Sypialnie
               </p>
               <p className="text-text-primary text-2xl font-light">
                 {property.bedrooms}
@@ -420,7 +399,7 @@ export default function PropertyDetailPanel({
             </div>
             <div>
               <p className="text-text-secondary text-xs uppercase tracking-widest mb-2">
-                Bathrooms
+                Łazienki
               </p>
               <p className="text-text-primary text-2xl font-light">
                 {property.bathrooms}
@@ -431,7 +410,7 @@ export default function PropertyDetailPanel({
           {/* Description */}
           <div className="mb-8 pb-8 border-b border-white/8">
             <h2 className="text-text-primary text-lg font-light mb-4">
-              About This Property
+              O nieruchomości
             </h2>
             <div className="space-y-4">
               {property.description.split("\n").map((paragraph, idx) => (
@@ -448,7 +427,7 @@ export default function PropertyDetailPanel({
           {/* Features */}
           <div className="mb-8 pb-8 border-b border-white/8">
             <h2 className="text-text-primary text-lg font-light mb-4">
-              Key Features
+              Najważniejsze cechy
             </h2>
             <div className="grid grid-cols-2 gap-3">
               {property.features.map((feature, idx) => (
@@ -463,7 +442,7 @@ export default function PropertyDetailPanel({
           {/* Contact Section */}
           <div className="mb-8 pb-8 border-b border-white/8">
             <h2 className="text-text-primary text-lg font-light mb-4">
-              Your Agent
+              Twój opiekun
             </h2>
             <AgentCard agent={property.agent} />
           </div>
@@ -471,7 +450,7 @@ export default function PropertyDetailPanel({
           {/* Contact Form */}
           <div className="mb-8">
             <h2 className="text-text-primary text-lg font-light mb-4">
-              Schedule a Viewing
+              Umów oglądanie
             </h2>
             <ContactForm propertyTitle={property.title} />
           </div>

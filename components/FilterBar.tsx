@@ -58,39 +58,22 @@ export default function FilterBar({ activeFilters, onFiltersChange }: FilterBarP
     });
   };
 
-  const activeSummaryParts: string[] = [];
-  if (activeFilters.type !== "all") {
-    activeSummaryParts.push(activeFilters.type);
-  }
-  if (activeFilters.style !== "all") {
-    activeSummaryParts.push(activeFilters.style);
-  }
-  if (activeFilters.area !== "all") {
-    activeSummaryParts.push(activeFilters.area.replace("-", "–"));
-  }
-  if (activeFilters.bedrooms) {
-    activeSummaryParts.push(`${activeFilters.bedrooms} beds`);
-  }
-  if (activeFilters.floors) {
-    activeSummaryParts.push(`${activeFilters.floors} floors`);
-  }
-
   const filters: { label: string; value: FilterType }[] = [
-    { label: "All", value: "all" },
-    { label: "Apartment", value: "apartment" },
-    { label: "House", value: "house" },
-    { label: "Commercial", value: "commercial" },
+    { label: "Wszystkie", value: "all" },
+    { label: "Apartament", value: "apartment" },
+    { label: "Dom", value: "house" },
+    { label: "Komercyjne", value: "commercial" },
   ];
 
   const styleOptions = [
-    { label: "All Styles", value: "all" },
-    { label: "Log", value: "log" },
-    { label: "Modern", value: "modern" },
-    { label: "Classic", value: "classic" },
+    { label: "Wszystkie style", value: "all" },
+    { label: "Z bali", value: "log" },
+    { label: "Nowoczesny", value: "modern" },
+    { label: "Klasyczny", value: "classic" },
   ];
 
   const areaOptions = [
-    { label: "All Areas", value: "all" },
+    { label: "Każda powierzchnia", value: "all" },
     { label: "100 - 200 m²", value: "100-200" },
     { label: "200 - 300 m²", value: "200-300" },
     { label: "300 - 500 m²", value: "300-500" },
@@ -124,7 +107,7 @@ export default function FilterBar({ activeFilters, onFiltersChange }: FilterBarP
           onClick={() => setIsOpen((open) => !open)}
           aria-expanded={isOpen}
         >
-          <span>{isOpen ? "Hide advanced filters" : "Show advanced filters"}</span>
+          <span>{isOpen ? "Ukryj filtry zaawansowane" : "Pokaż filtry zaawansowane"}</span>
           <span
             className={`flex h-5 w-5 items-center justify-center rounded-full bg-white/5 text-text-secondary transition-transform duration-200 ${
               isOpen ? "rotate-180" : ""
@@ -175,7 +158,7 @@ export default function FilterBar({ activeFilters, onFiltersChange }: FilterBarP
             {/* Style Dropdown */}
             <div className="flex flex-col md:flex-row md:items-center gap-2 w-full md:w-auto">
               <label className="text-text-secondary text-xs md:text-sm whitespace-nowrap">
-                Style:
+                Styl:
               </label>
               <div className="relative w-full md:w-auto">
                 <select
@@ -219,7 +202,7 @@ export default function FilterBar({ activeFilters, onFiltersChange }: FilterBarP
             {/* Area Dropdown */}
             <div className="flex flex-col md:flex-row md:items-center gap-2 w-full md:w-auto">
               <label className="text-text-secondary text-xs md:text-sm whitespace-nowrap">
-                Area:
+                Powierzchnia:
               </label>
               <div className="relative w-full md:w-auto">
                 <select
@@ -263,7 +246,7 @@ export default function FilterBar({ activeFilters, onFiltersChange }: FilterBarP
             {/* Bedrooms Selector */}
             <div className="flex flex-col md:flex-row md:items-center gap-2 w-full md:w-auto">
               <label className="text-text-secondary text-xs md:text-sm whitespace-nowrap">
-                Bedrooms:
+                Sypialnie:
               </label>
               <div className="flex flex-wrap items-center gap-1.5">
                 {[1, 2, 3, 4, 5].map((num) => {
@@ -303,7 +286,7 @@ export default function FilterBar({ activeFilters, onFiltersChange }: FilterBarP
             {/* Floors Selector */}
             <div className="flex flex-col md:flex-row md:items-center gap-2 w-full md:w-auto">
               <label className="text-text-secondary text-xs md:text-sm whitespace-nowrap">
-                Floors:
+                Piętra:
               </label>
               <div className="flex flex-wrap items-center gap-1.5">
                 {[1, 2, 3].map((num) => {
@@ -344,7 +327,7 @@ export default function FilterBar({ activeFilters, onFiltersChange }: FilterBarP
               onClick={handleResetFilters}
               className="mt-2 md:mt-0 px-4 py-2 text-xs md:text-sm font-medium text-text-secondary hover:text-text-primary transition-all duration-200 border rounded-lg bg-white/5 border-white/15"
             >
-              Clear filters
+              Wyczyść filtry
             </button>
           </div>
         </div>

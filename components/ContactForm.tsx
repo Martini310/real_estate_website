@@ -58,7 +58,7 @@ export default function ContactForm({ propertyTitle }: ContactFormProps) {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label htmlFor="name" className="block text-text-secondary text-sm mb-2">
-          Full Name
+          Imię i nazwisko
         </label>
         <input
           type="text"
@@ -68,13 +68,13 @@ export default function ContactForm({ propertyTitle }: ContactFormProps) {
           onChange={handleChange}
           required
           className="w-full px-4 py-3 bg-white/5 border border-white/8 text-text-primary placeholder-text-secondary/50 focus:outline-none focus:border-accent/50 transition-colors"
-          placeholder="Your full name"
+          placeholder="Jan Kowalski"
         />
       </div>
 
       <div>
         <label htmlFor="email" className="block text-text-secondary text-sm mb-2">
-          Email Address
+          Adres e-mail
         </label>
         <input
           type="email"
@@ -90,7 +90,7 @@ export default function ContactForm({ propertyTitle }: ContactFormProps) {
 
       <div>
         <label htmlFor="message" className="block text-text-secondary text-sm mb-2">
-          Message
+          Wiadomość
         </label>
         <textarea
           id="message"
@@ -100,7 +100,7 @@ export default function ContactForm({ propertyTitle }: ContactFormProps) {
           required
           rows={4}
           className="w-full px-4 py-3 bg-white/5 border border-white/8 text-text-primary placeholder-text-secondary/50 focus:outline-none focus:border-accent/50 transition-colors resize-none"
-          placeholder="Tell us about your interest in this property..."
+          placeholder="Napisz, czym jesteś zainteresowany/a w tej nieruchomości..."
         />
       </div>
 
@@ -109,17 +109,17 @@ export default function ContactForm({ propertyTitle }: ContactFormProps) {
         disabled={isSubmitting}
         className="w-full px-6 py-3 border border-accent/50 text-accent font-light uppercase tracking-widest hover:bg-accent/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
-        {isSubmitting ? "Sending..." : "Send Inquiry"}
+        {isSubmitting ? "Wysyłanie..." : "Wyślij zapytanie"}
       </button>
 
       {submitStatus === "success" && (
         <p className="text-accent text-sm text-center">
-          Thank you! We'll be in touch soon.
+          Dziękujemy! Wkrótce się odezwiemy.
         </p>
       )}
       {submitStatus === "error" && (
         <p className="text-red-400 text-sm text-center">
-          Something went wrong. Please try again.
+          Coś poszło nie tak. Spróbuj ponownie.
         </p>
       )}
     </form>

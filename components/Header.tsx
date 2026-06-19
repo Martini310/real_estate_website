@@ -4,10 +4,10 @@ import { useRef, useState, useEffect } from "react";
 import Image from "next/image";
 
 const NAV_ITEMS = [
-  { label: "Properties", href: "#properties" },
-  { label: "About", href: "#about" },
-  { label: "Services", href: "#services" },
-  { label: "Contact", href: "#contact" },
+  { label: "Oferty", href: "#properties" },
+  { label: "O mnie", href: "#about" },
+  { label: "Usługi", href: "#services" },
+  { label: "Kontakt", href: "#contact" },
 ];
 
 export default function Header() {
@@ -124,7 +124,7 @@ export default function Header() {
           <button
             type="button"
             className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-black/20 text-text-primary transition-colors duration-200"
-            aria-label="Toggle navigation"
+            aria-label="Przełącz nawigację"
             onClick={() => setIsMenuOpen((open) => !open)}
           >
             <span className="relative flex h-4 w-5 flex-col justify-between">

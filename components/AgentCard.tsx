@@ -38,20 +38,20 @@ export default function AgentCard({ agent }: AgentCardProps) {
         <h4 className="text-text-primary font-light text-lg mb-1">
           {agent.name}
         </h4>
-        <p className="text-text-secondary text-sm mb-3">Real Estate Agent</p>
-        
+        <p className="text-text-secondary text-sm mb-3">Doradca ds. nieruchomości</p>
+
         <div className="flex gap-2">
           <button
             onClick={handleCall}
             className="px-3 py-1.5 text-xs font-light border border-accent/30 text-accent hover:bg-accent/5 transition-colors"
           >
-            Call
+            Zadzwoń
           </button>
           <button
             onClick={handleEmail}
             className="px-3 py-1.5 text-xs font-light border border-accent/30 text-accent hover:bg-accent/5 transition-colors"
           >
-            Email
+            Napisz
           </button>
         </div>
       </div>

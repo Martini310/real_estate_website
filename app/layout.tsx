@@ -1,9 +1,15 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
-  title: "Premium Real Estate",
-  description: "Luxury properties and premium real estate",
+  title: {
+    default: "Premium Real Estate — luksusowe nieruchomości",
+    template: "%s | Premium Real Estate",
+  },
+  description:
+    "Luksusowe nieruchomości i prestiżowe inwestycje dopasowane do Twojego stylu życia.",
 };
 
 export default function RootLayout({
@@ -12,8 +18,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="pl">
+      <body>
+        <Header />
+        {children}
+        <Footer />
+      </body>
     </html>
   );
 }

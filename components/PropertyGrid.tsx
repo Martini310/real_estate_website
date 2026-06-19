@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useEffect, useRef } from "react";
-import PropertyCard, { Property } from "./PropertyCard";
+import PropertyCard from "./PropertyCard";
 import { Filters } from "./FilterBar";
+import { Property } from "@/types/property";
 import { initFadeIn } from "@/lib/animations";
 import { gsap } from "gsap";
 

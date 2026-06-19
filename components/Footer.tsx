@@ -47,22 +47,22 @@ export default function Footer() {
               Real Estate
             </h3>
             <p className="text-sm text-text-secondary leading-relaxed">
-              Discover luxury properties and premium real estate investments
-              tailored to your lifestyle.
+              Odkryj luksusowe nieruchomości i prestiżowe inwestycje dopasowane
+              do Twojego stylu życia.
             </p>
           </div>
 
           {/* Navigation */}
           <div>
             <h4 className="text-sm uppercase tracking-wider text-text-primary mb-6 font-medium">
-              Navigation
+              Nawigacja
             </h4>
             <div className="space-y-3">
               {[
-                { label: "Properties", id: "properties" },
-                { label: "About", id: "about" },
-                { label: "Services", id: "services" },
-                { label: "Contact", id: "contact" },
+                { label: "Oferty", id: "properties" },
+                { label: "O mnie", id: "about" },
+                { label: "Usługi", id: "services" },
+                { label: "Kontakt", id: "contact" },
               ].map((item) => (
                 <button
                   key={item.id}
@@ -78,14 +78,14 @@ export default function Footer() {
           {/* Services */}
           <div>
             <h4 className="text-sm uppercase tracking-wider text-text-primary mb-6 font-medium">
-              Services
+              Usługi
             </h4>
             <div className="space-y-3">
               {[
-                "Property Search",
-                "Consultation",
-                "Investment Planning",
-                "Property Management",
+                "Wyszukiwanie nieruchomości",
+                "Doradztwo",
+                "Planowanie inwestycji",
+                "Zarządzanie nieruchomościami",
               ].map((service) => (
                 <p
                   key={service}
@@ -100,23 +100,24 @@ export default function Footer() {
           {/* Contact Info */}
           <div>
             <h4 className="text-sm uppercase tracking-wider text-text-primary mb-6 font-medium">
-              Contact
+              Kontakt
             </h4>
+            {/* TODO: podmień dane kontaktowe na prawdziwe dane agenta */}
             <div className="space-y-3">
               <div className="text-sm text-text-secondary hover:text-text-primary transition-colors duration-200">
-                <p className="font-medium text-text-primary mb-1">Email</p>
-                <a href="mailto:info@premiumrealestate.com">
-                  info@premiumrealestate.com
+                <p className="font-medium text-text-primary mb-1">E-mail</p>
+                <a href="mailto:kontakt@premium-nieruchomosci.pl">
+                  kontakt@premium-nieruchomosci.pl
                 </a>
               </div>
               <div className="text-sm text-text-secondary hover:text-text-primary transition-colors duration-200">
-                <p className="font-medium text-text-primary mb-1">Phone</p>
-                <a href="tel:+1234567890">+1 (234) 567-890</a>
+                <p className="font-medium text-text-primary mb-1">Telefon</p>
+                <a href="tel:+48600000000">+48 600 000 000</a>
               </div>
               <div className="text-sm text-text-secondary">
-                <p className="font-medium text-text-primary mb-1">Address</p>
-                <p>123 Luxury Avenue, Suite 100</p>
-                <p>Premium City, PC 12345</p>
+                <p className="font-medium text-text-primary mb-1">Adres</p>
+                <p>ul. Przykładowa 1</p>
+                <p>00-001 Warszawa</p>
               </div>
             </div>
           </div>
@@ -134,7 +135,7 @@ export default function Footer() {
         {/* Bottom section */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-xs text-text-secondary">
-            © {currentYear} Premium Real Estate. All rights reserved.
+            © {currentYear} Premium Real Estate. Wszelkie prawa zastrzeżone.
           </p>
 
           {/* Social links */}
@@ -152,7 +153,7 @@ export default function Footer() {
 
           {/* Legal links */}
           <div className="flex items-center gap-6">
-            {["Privacy Policy", "Terms of Service"].map((link) => (
+            {["Polityka prywatności", "Regulamin"].map((link) => (
               <a
                 key={link}
                 href="#"

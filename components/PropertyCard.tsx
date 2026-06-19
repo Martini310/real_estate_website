@@ -3,22 +3,7 @@
 import { useEffect, useRef } from "react";
 import Image from "next/image";
 import { initParallaxCard, initCardHover } from "@/lib/animations";
-
-export interface Property {
-  id: number;
-  slug: string;
-  title: string;
-  location: string;
-  price: number;
-  area: number;
-  type: string;
-  style: string;
-  bedrooms: number;
-  bathrooms: number;
-  floors: number;
-  image: string;
-  featured: boolean;
-}
+import { Property } from "@/types/property";
 
 interface PropertyCardProps {
   property: Property;
@@ -52,9 +37,9 @@ export default function PropertyCard({
 
   const getTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
-      apartment: "Apartment",
-      house: "Residential House",
-      commercial: "Commercial Space",
+      apartment: "Apartament",
+      house: "Dom",
+      commercial: "Lokal komercyjny",
     };
     return labels[type] || type;
   };
@@ -107,24 +92,24 @@ export default function PropertyCard({
 
         {/* Details button - visible on hover */}
         <button className="px-6 py-2.5 mb-4 border border-white/20 text-text-primary text-xs uppercase tracking-widest opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0 hover:border-white/40 hover:bg-white/5">
-          Details
+          Szczegóły
         </button>
 
         {/* Property details - always visible, centered */}
         <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6 text-xs text-text-secondary mb-2">
           {property.bedrooms > 0 && (
             <div>
-              <span className="text-text-primary">Bedrooms: </span>
+              <span className="text-text-primary">Sypialnie: </span>
               {property.bedrooms}
             </div>
           )}
           <div>
-            <span className="text-text-primary">Area: </span>
+            <span className="text-text-primary">Powierzchnia: </span>
             {property.area} m²
           </div>
           <div>
-            <span className="text-text-primary">Floors: </span>
-            {Math.ceil(property.area / 150)}
+            <span className="text-text-primary">Piętra: </span>
+            {property.floors}
           </div>
         </div>
       </div>
