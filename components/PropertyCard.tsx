@@ -39,6 +39,10 @@ export default function PropertyCard({ property }: PropertyCardProps) {
     <Link
       ref={cardRef}
       href={`/oferta/${property.slug}`}
+      // scroll={false}: panel to intercepting route (slot @modal jest w DOM po
+      // treści strony). Bez tego Next przewinąłby okno na sam dół do nowego
+      // segmentu, a strona główna „uciekłaby" za panelem. Pozycja ma zostać.
+      scroll={false}
       className="group relative block h-[450px] md:h-[500px] lg:h-[calc(100vh/2)] min-h-[300px] w-full overflow-hidden bg-card-bg cursor-pointer"
     >
       {/* Image layer 120% height so parallax never reveals card background */}
