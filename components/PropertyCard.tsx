@@ -2,19 +2,16 @@
 
 import { useEffect, useRef } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { initParallaxCard, initCardHover } from "@/lib/animations";
 import { Property } from "@/types/property";
 
 interface PropertyCardProps {
   property: Property;
-  onPropertyClick?: (property: Property, imageRef: HTMLDivElement) => void;
 }
 
-export default function PropertyCard({
-  property,
-  onPropertyClick,
-}: PropertyCardProps) {
-  const cardRef = useRef<HTMLDivElement>(null);
+export default function PropertyCard({ property }: PropertyCardProps) {
+  const cardRef = useRef<HTMLAnchorElement>(null);
   const imageRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -29,12 +26,6 @@ export default function PropertyCard({
     };
   }, []);
 
-  const handleCardClick = () => {
-    if (onPropertyClick && imageRef.current) {
-      onPropertyClick(property, imageRef.current);
-    }
-  };
-
   const getTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
       apartment: "Apartament",
@@ -45,10 +36,10 @@ export default function PropertyCard({
   };
 
   return (
-    <div
+    <Link
       ref={cardRef}
-      onClick={handleCardClick}
-      className="group relative h-[450px] md:h-[500px] lg:h-[calc(100vh/2)] min-h-[300px] w-full overflow-hidden bg-card-bg cursor-pointer"
+      href={`/oferta/${property.slug}`}
+      className="group relative block h-[450px] md:h-[500px] lg:h-[calc(100vh/2)] min-h-[300px] w-full overflow-hidden bg-card-bg cursor-pointer"
     >
       {/* Image layer 120% height so parallax never reveals card background */}
       <div
@@ -84,16 +75,15 @@ export default function PropertyCard({
           {property.title}
         </h3>
 
-
         {/* Type description - visible on hover */}
         <p className="text-text-secondary text-sm md:text-base mb-4 opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0">
           {getTypeLabel(property.type)}
         </p>
 
-        {/* Details button - visible on hover */}
-        <button className="px-6 py-2.5 mb-4 border border-white/20 text-text-primary text-xs uppercase tracking-widest opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0 hover:border-white/40 hover:bg-white/5">
+        {/* Details affordance - visible on hover (span, bo cała karta to link) */}
+        <span className="px-6 py-2.5 mb-4 border border-white/20 text-text-primary text-xs uppercase tracking-widest opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0 group-hover:border-white/40 group-hover:bg-white/5">
           Szczegóły
-        </button>
+        </span>
 
         {/* Property details - always visible, centered */}
         <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6 text-xs text-text-secondary mb-2">
@@ -113,6 +103,6 @@ export default function PropertyCard({
           </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }

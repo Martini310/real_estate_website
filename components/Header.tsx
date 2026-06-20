@@ -2,12 +2,12 @@
 
 import { useRef, useState, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 
 const NAV_ITEMS = [
-  { label: "Oferty", href: "#properties" },
-  { label: "O mnie", href: "#about" },
-  { label: "Usługi", href: "#services" },
-  { label: "Kontakt", href: "#contact" },
+  { label: "Oferty", href: "/oferty" },
+  { label: "O mnie", href: "/o-mnie" },
+  { label: "Kontakt", href: "/kontakt" },
 ];
 
 export default function Header() {
@@ -16,19 +16,6 @@ export default function Header() {
   const lastScrollYRef = useRef(0);
   const visibleRef = useRef(true);
   const rafRef = useRef<number | null>(null);
-
-  const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    const href = e.currentTarget.getAttribute("href");
-    if (!href || !href.startsWith("#")) return;
-
-    e.preventDefault();
-    const targetId = href.substring(1);
-    const targetElement = document.getElementById(targetId);
-
-    if (targetElement) {
-      targetElement.scrollIntoView({ behavior: "smooth" });
-    }
-  };
 
   useEffect(() => {
     const update = () => {
@@ -90,8 +77,8 @@ export default function Header() {
       >
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           {/* Logo on the left */}
-          <a
-            href="#"
+          <Link
+            href="/"
             className="flex items-center gap-2 text-lg sm:text-xl md:text-2xl font-light tracking-tight text-text-primary"
           >
             <Image
@@ -102,21 +89,18 @@ export default function Header() {
               height={40}
               priority
             />
-          </a>
+          </Link>
 
           {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-6 lg:gap-8">
             {NAV_ITEMS.map((item) => (
-              <a
+              <Link
                 key={item.label}
                 href={item.href}
-                onClick={(e) => {
-                  handleSmoothScroll(e);
-                }}
                 className="text-sm text-text-secondary hover:text-text-primary transition-colors duration-200"
               >
                 {item.label}
-              </a>
+              </Link>
             ))}
           </nav>
 
@@ -157,17 +141,14 @@ export default function Header() {
           <nav className="pt-1">
             <div className="flex flex-col gap-1">
               {NAV_ITEMS.map((item) => (
-                <a
+                <Link
                   key={item.label}
                   href={item.href}
-                  onClick={(e) => {
-                    handleSmoothScroll(e);
-                    setIsMenuOpen(false);
-                  }}
+                  onClick={() => setIsMenuOpen(false)}
                   className="rounded-xl px-3 py-2 text-sm text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors duration-200"
                 >
                   {item.label}
-                </a>
+                </Link>
               ))}
             </div>
           </nav>

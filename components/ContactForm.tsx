@@ -3,7 +3,8 @@
 import { useState } from "react";
 
 interface ContactFormProps {
-  propertyTitle: string;
+  /** Tytuł oferty, której dotyczy zapytanie. Pominięty na ogólnej stronie kontaktu. */
+  propertyTitle?: string;
 }
 
 export default function ContactForm({ propertyTitle }: ContactFormProps) {
@@ -34,12 +35,12 @@ export default function ContactForm({ propertyTitle }: ContactFormProps) {
     setSubmitStatus("idle");
 
     try {
-      // Simulate form submission
+      // TODO (Faza 4): podłączyć realną wysyłkę (API route / e-mail / WP)
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       console.log("Form submitted:", {
         ...formState,
-        property: propertyTitle,
+        ...(propertyTitle ? { property: propertyTitle } : {}),
       });
 
       setSubmitStatus("success");

@@ -32,16 +32,16 @@ Cel: cały interfejs po polsku, spójne formatowanie PL.
 - [x] `ContactForm` + `AgentCard` + `BackToTop` — pełna polonizacja (etykiety, placeholdery, komunikaty, aria)
 - [x] Metadane bazowe po polsku _(favicon i OG per-strona → Faza 2/4)_
 
-## Faza 2 — Routing i podstrony
+## Faza 2 — Routing i podstrony ✅ ZROBIONE
 Cel: realne adresy, działająca nawigacja, podstrony.
 
-- [ ] `/oferta/[slug]` — strona szczegółów oferty (`generateStaticParams`, `generateMetadata`, OG); przenieść treść z panelu
-- [ ] Klik w karcie → nawigacja do `/oferta/[slug]` (rozważyć zachowanie animacji przejścia / view transitions)
-- [ ] `/oferty` — pełna lista ofert z filtrami i sortowaniem (homepage zostaje „wizytówką” z wyróżnionymi)
-- [ ] `/o-mnie` — bio agenta, zdjęcie, doświadczenie, statystyki, uprawnienia, CTA do kontaktu
-- [ ] `/kontakt` — ogólny formularz + dane kontaktowe + godziny + mapa + social
-- [ ] `app/not-found.tsx` — strona 404 w stylu serwisu
-- [ ] Naprawić wszystkie martwe linki (`#about`, `#services`) → realne trasy
+- [x] `/oferta/[slug]` — pełna podstrona (`generateStaticParams` = 8 ofert SSG, `generateMetadata` + OG); treść z panelu wydzielona do `PropertyDetailContent`
+- [x] Klik w karcie → `/oferta/[slug]` przez **intercepting routes**: panel-overlay przy kliknięciu z listy (premium efekt zachowany), pełna strona przy bezpośrednim wejściu/odświeżeniu. Karta to teraz `<Link>`.
+- [x] `/oferty` — pełna lista ofert z filtrami (`OfertyBrowser`); homepage zostaje wizytówką
+- [x] `/o-mnie` — bio, zdjęcie, statystyki, wartości, CTA (placeholdery)
+- [x] `/kontakt` — ogólny formularz + dane kontaktowe + godziny (placeholdery); _mapa/social → Faza 4_
+- [x] `app/not-found.tsx` — 404 w stylu serwisu
+- [x] Martwe linki (`#about`, `#services`) → realne trasy (Header + Footer na `next/link`); „Usługi" usunięte z nawigacji (brak strony)
 
 ## Faza 3 — Integracja z WordPress (headless)
 Cel: oferty z WP zamiast JSON. Warstwa UI bez zmian.
@@ -98,6 +98,19 @@ Cel: oferty z WP zamiast JSON. Warstwa UI bez zmian.
 **Weryfikacja:** `npx tsc --noEmit` → 0 błędów; `npm run build` → OK (`/` prerenderuje się statycznie).
 
 **Do podmiany (placeholdery):** dane kontaktowe w `Footer` (oznaczone `TODO`), marka „Premium Real Estate", nagłówek Hero.
+
+### Faza 2 (zrealizowane)
+**Routing / architektura**
+- Intercepting routes: `app/@modal/(.)oferta/[slug]` (panel-overlay) + `app/oferta/[slug]` (pełna strona SSG). Slot równoległy `@modal` w `layout.tsx` + `@modal/default.tsx`.
+- Treść oferty wydzielona do `PropertyDetailContent` (wspólna dla panelu i strony). Panel-overlay = `PropertyModal` (animacja wjazdu/blur, zamykanie przez `router.back()`, Escape, klik w tło).
+- Nowe podstrony: `/oferty` (+`OfertyBrowser`), `/o-mnie`, `/kontakt`, `not-found.tsx`.
+- `PropertyCard` → `<Link>`; usunięto `onPropertyClick` z całego łańcucha; usunięto stary `PropertyDetailPanel`.
+- Nawigacja Header/Footer na `next/link` (realne trasy). `ContactForm` z opcjonalnym `propertyTitle` (działa też jako ogólny formularz). `next.config.js`: `images.qualities=[75,90]`.
+
+**Weryfikacja (dev + build)**
+- `npm run build` → OK: 8 ofert prerenderowanych (SSG), `/oferty` `/o-mnie` `/kontakt` statyczne, intercept jako route dynamiczny.
+- Runtime (preview): klik z listy → panel-overlay nad homepage, URL `/oferta/[slug]`, scroll zablokowany, lista pod spodem (✓ intercepting). Bezpośrednie wejście na `/oferta/[slug]` → pełna strona (nie modal) z tytułem w `<title>` i meta-description (✓ SEO). `/oferty`, `/o-mnie`, `/kontakt`, 404 — wszystkie renderują poprawnie.
+- ⚠️ Animacji GSAP nie dało się potwierdzić wizualnie w preview: karta jest ukryta (`document.hidden=true`) → `requestAnimationFrame` wstrzymany → GSAP zamrożony. To artefakt środowiska, nie błąd; w realnej przeglądarce działa. Do potwierdzenia „na oko" w zwykłym oknie.
 
 ### Uwagi / dług na później
 - Nawigacja `O mnie`/`Usługi` wskazuje na `#about`/`#services`, które jeszcze nie istnieją (no-op) → realne trasy w **Fazie 2**.

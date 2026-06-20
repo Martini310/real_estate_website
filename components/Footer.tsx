@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Link from "next/link";
 import { initFadeIn } from "@/lib/animations";
 
 export default function Footer() {
@@ -13,13 +14,6 @@ export default function Footer() {
   }, []);
 
   const currentYear = new Date().getFullYear();
-
-  const handleSmoothScroll = (sectionId: string) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
-    }
-  };
 
   return (
     <footer
@@ -59,18 +53,17 @@ export default function Footer() {
             </h4>
             <div className="space-y-3">
               {[
-                { label: "Oferty", id: "properties" },
-                { label: "O mnie", id: "about" },
-                { label: "Usługi", id: "services" },
-                { label: "Kontakt", id: "contact" },
+                { label: "Oferty", href: "/oferty" },
+                { label: "O mnie", href: "/o-mnie" },
+                { label: "Kontakt", href: "/kontakt" },
               ].map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => handleSmoothScroll(item.id)}
+                <Link
+                  key={item.href}
+                  href={item.href}
                   className="text-sm text-text-secondary hover:text-text-primary transition-colors duration-200 block"
                 >
                   {item.label}
-                </button>
+                </Link>
               ))}
             </div>
           </div>

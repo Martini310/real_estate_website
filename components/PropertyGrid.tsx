@@ -10,13 +10,11 @@ import { gsap } from "gsap";
 interface PropertyGridProps {
   properties: Property[];
   activeFilters: Filters;
-  onPropertyClick?: (property: Property, imageRef: HTMLDivElement) => void;
 }
 
 export default function PropertyGrid({
   properties,
   activeFilters,
-  onPropertyClick,
 }: PropertyGridProps) {
   const gridRef = useRef<HTMLDivElement>(null);
   const isInitialMount = useRef(true);
@@ -96,11 +94,7 @@ export default function PropertyGrid({
 
         <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
           {filteredProperties.map((property) => (
-            <PropertyCard
-              key={property.id}
-              property={property}
-              onPropertyClick={onPropertyClick}
-            />
+            <PropertyCard key={property.id} property={property} />
           ))}
         </div>
       </div>
