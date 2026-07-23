@@ -9,13 +9,26 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "#0E0E0E",
-        "secondary-dark": "#151515",
-        "card-bg": "#1C1C1C",
-        "panel-bg": "#151515",
-        "text-primary": "#F5F5F5",
-        "text-secondary": "#A3A3A3",
-        accent: "#C6A15B",
+        // Ciemna, ciepła baza (espresso) — zamiast zimnej czerni,
+        // żeby beż i pomarańcz z logo Peritus miały spójne, ciepłe podłoże.
+        background: "#0F0B06",
+        "secondary-dark": "#151009",
+        "card-bg": "#1A140D",
+        "panel-bg": "#15100A",
+        // Tekst — kremowa biel i ciepły taupe zamiast neutralnych szarości.
+        "text-primary": "#F4ECDE",
+        "text-secondary": "#A99B84",
+        // Pomarańcz z logo — kolor akcji (przyciski, ceny, aktywne stany).
+        accent: "#E9821E",
+        "accent-soft": "#F3A24E",
+        "accent-strong": "#D06E12",
+        // Beż firmowy — ciepły neutralny akcent (detale, subtelne tła).
+        beige: "#D9C4A3",
+        "beige-muted": "#8A7C64",
+      },
+      boxShadow: {
+        // Ciepła poświata pomarańczu dla kluczowych akcentów.
+        glow: "0 0 40px -12px rgba(233, 130, 30, 0.45)",
       },
     },
   },

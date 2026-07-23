@@ -67,28 +67,46 @@ export default function Header() {
       }`}
     >
       <div
-        className="mx-4 mt-4 max-w-7xl md:mx-auto md:mt-6 rounded-2xl border border-white/10 px-4 py-3 sm:px-6 sm:py-4 md:px-8 md:py-2"
+        className="mx-4 mt-4 max-w-7xl md:mx-auto md:mt-6 rounded-2xl border border-beige/10 px-4 py-3 sm:px-6 sm:py-4 md:px-8 md:py-2"
         style={{
-          background: "rgba(255, 255, 255, 0.05)",
+          background: "rgba(20, 16, 11, 0.55)",
           backdropFilter: "blur(20px) saturate(180%)",
           WebkitBackdropFilter: "blur(20px) saturate(180%)",
-          boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2)",
+          boxShadow: "0 8px 32px rgba(0, 0, 0, 0.35)",
         }}
       >
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          {/* Logo on the left */}
+          {/* Logo on the left — ikona na beżowym kaflu (zgodnie z materiałami
+              marki), obok wordmark złożony typografią serwisu */}
           <Link
             href="/"
-            className="flex items-center gap-2 text-lg sm:text-xl md:text-2xl font-light tracking-tight text-text-primary"
+            className="group flex items-center gap-2.5 sm:gap-3"
+            aria-label="Peritus Nieruchomości — strona główna"
           >
-            <Image
-              src="/logo.png"
-              alt="Logo"
-              className="h-9 w-28 sm:h-10 sm:w-32 object-contain"
-              width={100}
-              height={40}
-              priority
-            />
+            <span className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-gradient-to-br from-beige to-[#F0E5D4] ring-1 ring-black/10 shadow-[0_6px_18px_-6px_rgba(233,130,30,0.5)] transition-transform duration-300 group-hover:scale-105">
+              <Image
+                src="/logo-pn.png"
+                alt="Peritus Nieruchomości"
+                width={44}
+                height={44}
+                className="h-7 w-7 sm:h-8 sm:w-8 object-contain"
+                priority
+              />
+            </span>
+            <span
+              className="flex flex-col leading-none"
+              style={{ fontFamily: "var(--font-montserrat)" }}
+            >
+              <span
+                className="text-lg sm:text-xl font-semibold tracking-[0.16em] text-text-primary"
+                style={{ lineHeight: "1.35em" }}
+              >
+                PERITUS
+              </span>
+              <span className="text-[9px] sm:text-[10px] font-medium tracking-[1.5px] text-accent-soft">
+                NIERUCHOMOŚCI
+              </span>
+            </span>
           </Link>
 
           {/* Desktop nav */}

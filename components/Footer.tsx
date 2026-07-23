@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { initFadeIn } from "@/lib/animations";
 
@@ -26,7 +27,7 @@ export default function Footer() {
         className="absolute top-0 left-0 right-0 h-px"
         style={{
           background:
-            "linear-gradient(to right, transparent, rgba(198, 161, 91, 0.3), transparent)",
+            "linear-gradient(to right, transparent, rgba(233, 130, 30, 0.4), transparent)",
         }}
       />
 
@@ -35,14 +36,34 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
           {/* Brand section */}
           <div>
-            <h3 className="text-xl font-light tracking-tight text-text-primary mb-6">
-              Premium
-              <br />
-              Real Estate
-            </h3>
+            <div className="flex items-center gap-3 mb-6">
+              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-beige to-[#F0E5D4] ring-1 ring-black/10 shadow-[0_6px_18px_-6px_rgba(233,130,30,0.5)]">
+                <Image
+                  src="/logo-pn.png"
+                  alt="Peritus Nieruchomości"
+                  width={44}
+                  height={44}
+                  className="h-8 w-8 object-contain"
+                />
+              </span>
+              <span
+                className="flex flex-col leading-none"
+                style={{ fontFamily: "var(--font-montserrat)" }}
+              >
+                <span
+                  className="text-lg font-semibold tracking-[0.16em] text-text-primary"
+                  style={{ lineHeight: "1.35em" }}
+                >
+                  PERITUS
+                </span>
+                <span className="text-[10px] font-medium tracking-[1.5px] text-accent-soft">
+                  NIERUCHOMOŚCI
+                </span>
+              </span>
+            </div>
             <p className="text-sm text-text-secondary leading-relaxed">
-              Odkryj luksusowe nieruchomości i prestiżowe inwestycje dopasowane
-              do Twojego stylu życia.
+              Luksusowe domy, apartamenty i prestiżowe inwestycje w najlepszych
+              lokalizacjach. Eksperckie doradztwo na każdym etapie.
             </p>
           </div>
 
@@ -99,8 +120,8 @@ export default function Footer() {
             <div className="space-y-3">
               <div className="text-sm text-text-secondary hover:text-text-primary transition-colors duration-200">
                 <p className="font-medium text-text-primary mb-1">E-mail</p>
-                <a href="mailto:kontakt@premium-nieruchomosci.pl">
-                  kontakt@premium-nieruchomosci.pl
+                <a href="mailto:damian@peritus-nieruchomosci.pl">
+                  damian@peritus-nieruchomosci.pl
                 </a>
               </div>
               <div className="text-sm text-text-secondary hover:text-text-primary transition-colors duration-200">
@@ -109,8 +130,8 @@ export default function Footer() {
               </div>
               <div className="text-sm text-text-secondary">
                 <p className="font-medium text-text-primary mb-1">Adres</p>
-                <p>ul. Przykładowa 1</p>
-                <p>00-001 Warszawa</p>
+                <p>Bobrownicka 44D/2</p>
+                <p>61-306 Poznań</p>
               </div>
             </div>
           </div>
@@ -128,7 +149,7 @@ export default function Footer() {
         {/* Bottom section */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-xs text-text-secondary">
-            © {currentYear} Premium Real Estate. Wszelkie prawa zastrzeżone.
+            © {currentYear} Peritus Nieruchomości. Wszelkie prawa zastrzeżone.
           </p>
 
           {/* Social links */}

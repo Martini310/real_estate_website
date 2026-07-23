@@ -116,3 +116,51 @@ Cel: oferty z WP zamiast JSON. Warstwa UI bez zmian.
 - Nawigacja `O mnie`/`Usługi` wskazuje na `#about`/`#services`, które jeszcze nie istnieją (no-op) → realne trasy w **Fazie 2**.
 - `SplitText` (`gsap/all`) — zweryfikować licencję/działanie w produkcji (**Faza 5**).
 - Formularz nadal symuluje wysyłkę (**Faza 4**).
+
+---
+
+## Rebranding — Peritus Nieruchomości (identyfikacja wizualna) ✅ ZROBIONE
+Cel: dopasować szablon do marki **PERITUS NIERUCHOMOŚCI** (logo `logo-pn`, `logo-pn2`).
+Paleta firmy: **beż + pomarańcz**. Strona zostaje ciemna, ale ocieplona.
+
+**Kierunek designu**
+- Baza: ciepła głęboka czerń (espresso `#14100B`) zamiast zimnej `#0E0E0E`.
+- Akcent akcji (przyciski, ceny, aktywne stany, linie): **pomarańcz** `#E9821E` z logo.
+- Neutralne ciepłe (tekst drugorzędny, subtelne tła/bordery): **beż/taupe**.
+- Tekst główny: kremowa biel `#F4ECDE` zamiast zimnej `#F5F5F5`.
+
+**Nowe tokeny (`tailwind.config.ts`)**
+- `background #14100B`, `secondary-dark #1A1610`, `card-bg #1F1912`, `panel-bg #1A1510`
+- `text-primary #F4ECDE`, `text-secondary #A99B84`
+- `accent #E9821E`, `accent-soft #F3A24E`, `accent-strong #D06E12`
+- `beige #D9C4A3`, `beige-muted #8A7C64`, `shadow-glow` (poświata pomarańczu)
+
+**Zmiany**
+- `globals.css`: ciepły radial-gradient tła, pomarańczowe `::selection`, ciepły scrollbar, ocieplone `.glass`, util `.text-gradient-brand` (pomarańcz→beż).
+- **Logo:** w Header i Footer ikona `logo-pn` na beżowym kaflu (zgodnie z materiałami marki — ciemny napis pełnego logo byłby niewidoczny na ciemnym tle) + wordmark „PERITUS" (kremowy) / „NIERUCHOMOŚCI" (pomarańcz) złożony typografią serwisu. Favicon: `app/icon.png` z ikony.
+- **Hero:** eyebrow „Peritus · Nieruchomości" (pomarańcz) + hasło „Nieruchomości, które **mają znaczenie**" (gradient marki) + podtytuł; gradient tła zaktualizowany do nowego `#14100B`; drop-shadow nagłówka dla czytelności na jasnym zdjęciu. **Zdjęcie tła** → własny render marki `public/hero.png` (willa z trawertynu, złota godzina, morze) zamiast stocku Unsplash — spójne z paletą beż/pomarańcz. Jeden poziomy kadr na desktop i mobile (mobile do podmiany na 9:16, gdy powstanie).
+- **Header:** tło zmienione z jasnego szkła (`rgba(255,255,255,0.05)`) na ciemne ciepłe (`rgba(20,16,11,0.55)` + blur) — nawigacja i logo są teraz czytelne także na jasnym niebie zdjęcia hero; border → `beige/10`.
+- **Marka:** metadata (`layout.tsx`), Footer, copyright → „Peritus Nieruchomości"; domena e-mail → `peritus.pl` (Footer, `/kontakt`, 8 agentów w `properties.json`).
+- **Akcenty:** aktywne filtry i selektory (FilterBar) → pomarańcz; hover „Szczegóły" na karcie → pomarańcz; statystyki `/o-mnie` → gradient marki. Cena, kropki cech, wskaźnik galerii → pomarańcz (przez token `accent`).
+- Ostatni angielski placeholder (`your@email.com` → `twoj@email.pl`).
+
+**Weryfikacja**
+- `npx tsc --noEmit` → 0 błędów.
+- Preview (dev): strona główna, `/o-mnie`, `/kontakt`, `/oferty`, `/oferta/[slug]` renderują poprawnie po polsku; `bodyBg = rgb(20,16,11)`; cena `4 850 000 zł` i kropki cech = `rgb(233,130,30)` (pomarańcz); Footer = „Peritus Nieruchomości" + `kontakt@peritus.pl`; brak błędów w konsoli.
+- ⚠️ Sekcje z animacją GSAP (fade-in Footer, SplitText tytułu oferty) bywają niewidoczne na screenshotach w headless-preview (`document.hidden` wstrzymuje rAF) — artefakt środowiska, nie błąd; potwierdzone przez odczyt DOM/computed styles.
+
+**Do podmiany (placeholdery, bez zmian brandingu):** telefon/adres w Footer i `/kontakt`, „Jan Kowalski", zdjęcie i bio agenta, linki społecznościowe — realne dane w **Fazie 4**.
+
+### Iteracja po feedbacku właściciela (design)
+- **„Za pomarańczowo"** → pomarańcz zredukowany do akcentu: aktywne przyciski filtrów (sypialnie/piętra) i ich stany z pomarańczu na **beż**; `saturate` w szkle FilterBar 180–190% → **115%** (ciepłe tło zdjęcia nie przebija już pomarańczem przez glass); radialny blask tła stonowany (0.08→0.05). Pomarańcz zostaje tylko na: cenie, haśle hero, eyebrow, aktywnym tabie kategorii.
+- **Ciemniejsze tło:** `background #14100B → #0F0B06` (+ secondary/card/panel proporcjonalnie), `body` i gradient hero zaktualizowane.
+- **Zanikanie hero (naprawa „odcięcia" przy scrollu):** kluczowa zmiana — gradient wyjęty z warstwy parallax → **statyczny** (zawsze pokrywa dół sekcji aż do koloru tła, niezależnie od pozycji obrazu). Obraz dostał zapas wysokości + łagodniejszy parallax `0.4 → 0.22`. (Scroll w headless-preview zawodny przez GSAP ScrollTrigger — stąd weryfikacja geometryczna zamiast wideo.) _(Właściciel dostroił potem: osobny kadr mobilny `hero-mobile.png` 9:16 + `h-[110%]`.)_
+
+### Zmiany funkcjonalne + brand (2. iteracja właściciela)
+- **Kategorie filtrów** → docelowe: Wszystkie / **Domy** / **Mieszkania** / **Lokale** (wartości `house`/`apartment`/`commercial` bez zmian). Etykiety typu na kartach/szczegółach ujednolicone (Mieszkanie / Lokal).
+- **Filtr „Styl" → „Cena":** nowy typ `PriceRange` (5 progów: każda / do 2 mln / 2–3,5 / 3,5–5 / powyżej 5 mln zł), logika zakresu w `PropertyGrid`; `Filters.style`/`StyleType` usunięte. „Sypialnie" → **„Pokoje"** (etykieta UI; pole danych `bedrooms` bez zmian — minimal impact).
+- **Jeden agent — Damian Rożewski** we wszystkich 8 ofertach (`data/properties.json`: name / `damian@peritus-nieruchomosci.pl` / `/damian.webp`); `/o-mnie` (imię + zdjęcie), Footer i `/kontakt` (e-mail + adres **Bobrownicka 44D/2, 61-306 Poznań**). Telefon = placeholder `+48 600 000 000` (do podania).
+- **Logo (Montserrat):** wordmark w `next/font` Montserrat (600 „PERITUS" / 500 „NIERUCHOMOŚCI"), obie linie zrównane do tej samej szerokości (zmierzone 117 px = 117 px), mniejszy odstęp (`mt-0.5`). Kolory bez zmian.
+- **Weryfikacja:** `tsc` 0 błędów; preview — kategorie/cena/pokoje działają, logika ceny pokrywa 8 ofert bez luk (3+2+3+0), Damian na `/o-mnie` i `/kontakt`, logo Montserrat równe.
+
+**Nadal placeholder (do podania):** telefon Damiana, godziny otwarcia, „Jan Kowalski" (podpowiedź w polu formularza), linki social. `property.style` zostaje w danych/typie (nieużywane po zmianie filtra na cenę).

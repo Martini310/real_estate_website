@@ -3,12 +3,17 @@
 import { useEffect, useState } from "react";
 
 export type FilterType = "all" | "apartment" | "house" | "commercial";
-export type StyleType = "all" | "log" | "modern" | "classic";
+export type PriceRange =
+  | "all"
+  | "0-2000000"
+  | "2000000-3500000"
+  | "3500000-5000000"
+  | "5000000+";
 export type AreaRange = "all" | "100-200" | "200-300" | "300-500" | "500+";
 
 export interface Filters {
   type: FilterType;
-  style: StyleType;
+  price: PriceRange;
   area: AreaRange;
   bedrooms: number | null;
   floors: number | null;
@@ -32,8 +37,8 @@ export default function FilterBar({ activeFilters, onFiltersChange }: FilterBarP
     onFiltersChange({ ...activeFilters, type });
   };
 
-  const handleStyleChange = (style: StyleType) => {
-    onFiltersChange({ ...activeFilters, style });
+  const handlePriceChange = (price: PriceRange) => {
+    onFiltersChange({ ...activeFilters, price });
   };
 
   const handleAreaChange = (area: AreaRange) => {
@@ -51,7 +56,7 @@ export default function FilterBar({ activeFilters, onFiltersChange }: FilterBarP
   const handleResetFilters = () => {
     onFiltersChange({
       type: "all",
-      style: "all",
+      price: "all",
       area: "all",
       bedrooms: null,
       floors: null,
@@ -60,16 +65,17 @@ export default function FilterBar({ activeFilters, onFiltersChange }: FilterBarP
 
   const filters: { label: string; value: FilterType }[] = [
     { label: "Wszystkie", value: "all" },
-    { label: "Apartament", value: "apartment" },
-    { label: "Dom", value: "house" },
-    { label: "Komercyjne", value: "commercial" },
+    { label: "Domy", value: "house" },
+    { label: "Mieszkania", value: "apartment" },
+    { label: "Lokale", value: "commercial" },
   ];
 
-  const styleOptions = [
-    { label: "Wszystkie style", value: "all" },
-    { label: "Z bali", value: "log" },
-    { label: "Nowoczesny", value: "modern" },
-    { label: "Klasyczny", value: "classic" },
+  const priceOptions: { label: string; value: PriceRange }[] = [
+    { label: "Każda cena", value: "all" },
+    { label: "do 2 mln zł", value: "0-2000000" },
+    { label: "2–3,5 mln zł", value: "2000000-3500000" },
+    { label: "3,5–5 mln zł", value: "3500000-5000000" },
+    { label: "powyżej 5 mln zł", value: "5000000+" },
   ];
 
   const areaOptions = [
@@ -90,8 +96,8 @@ export default function FilterBar({ activeFilters, onFiltersChange }: FilterBarP
             onClick={() => handleTypeChange(filter.value)}
             className={`uppercase tracking-wider transition-colors duration-300 pb-2 border-b-2 ${
               activeFilters.type === filter.value
-                ? "text-text-primary border-text-primary"
-                : "text-text-secondary border-transparent hover:text-text-primary hover:border-white/20"
+                ? "text-accent-soft border-accent"
+                : "text-text-secondary border-transparent hover:text-text-primary hover:border-beige/30"
             }`}
           >
             {filter.label}
@@ -146,8 +152,8 @@ export default function FilterBar({ activeFilters, onFiltersChange }: FilterBarP
           style={{
             background:
               "linear-gradient(135deg, rgba(10,10,10,0), rgba(30,30,30,0))",
-            backdropFilter: "blur(26px) saturate(190%)",
-            WebkitBackdropFilter: "blur(26px) saturate(190%)",
+            backdropFilter: "blur(26px) saturate(115%)",
+            WebkitBackdropFilter: "blur(26px) saturate(115%)",
             boxShadow:
               "0 18px 45px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255,255,255,0.04)",
           }}
@@ -158,21 +164,21 @@ export default function FilterBar({ activeFilters, onFiltersChange }: FilterBarP
             {/* Style Dropdown */}
             <div className="flex flex-col md:flex-row md:items-center gap-2 w-full md:w-auto">
               <label className="text-text-secondary text-xs md:text-sm whitespace-nowrap">
-                Styl:
+                Cena:
               </label>
               <div className="relative w-full md:w-auto">
                 <select
-                  value={activeFilters.style}
-                  onChange={(e) => handleStyleChange(e.target.value as StyleType)}
+                  value={activeFilters.price}
+                  onChange={(e) => handlePriceChange(e.target.value as PriceRange)}
                   className="appearance-none w-full md:w-auto px-4 py-2.5 pr-8 text-text-primary text-sm cursor-pointer transition-all duration-200 focus:outline-none rounded-lg min-w-[140px] md:min-w-[160px]"
                   style={{
                     background: "rgba(255, 255, 255, 0.05)",
-                    backdropFilter: "blur(20px) saturate(180%)",
-                    WebkitBackdropFilter: "blur(20px) saturate(180%)",
+                    backdropFilter: "blur(20px) saturate(115%)",
+                    WebkitBackdropFilter: "blur(20px) saturate(115%)",
                     border: "1px solid rgba(255, 255, 255, 0.12)",
                   }}
                 >
-                  {styleOptions.map((option) => (
+                  {priceOptions.map((option) => (
                     <option key={option.value} value={option.value} className="bg-card-bg">
                       {option.label}
                     </option>
@@ -211,8 +217,8 @@ export default function FilterBar({ activeFilters, onFiltersChange }: FilterBarP
                   className="appearance-none w-full md:w-auto px-4 py-2.5 pr-8 text-text-primary text-sm cursor-pointer transition-all duration-200 focus:outline-none rounded-lg min-w-[140px] md:min-w-[160px]"
                   style={{
                     background: "rgba(255, 255, 255, 0.05)",
-                    backdropFilter: "blur(20px) saturate(180%)",
-                    WebkitBackdropFilter: "blur(20px) saturate(180%)",
+                    backdropFilter: "blur(20px) saturate(115%)",
+                    WebkitBackdropFilter: "blur(20px) saturate(115%)",
                     border: "1px solid rgba(255, 255, 255, 0.12)",
                   }}
                 >
@@ -246,7 +252,7 @@ export default function FilterBar({ activeFilters, onFiltersChange }: FilterBarP
             {/* Bedrooms Selector */}
             <div className="flex flex-col md:flex-row md:items-center gap-2 w-full md:w-auto">
               <label className="text-text-secondary text-xs md:text-sm whitespace-nowrap">
-                Sypialnie:
+                Pokoje:
               </label>
               <div className="flex flex-wrap items-center gap-1.5">
                 {[1, 2, 3, 4, 5].map((num) => {
@@ -263,15 +269,15 @@ export default function FilterBar({ activeFilters, onFiltersChange }: FilterBarP
                       style={
                         isActive
                           ? {
-                              background: "rgba(255, 255, 255, 0.18)",
-                              backdropFilter: "blur(20px) saturate(180%)",
-                              WebkitBackdropFilter: "blur(20px) saturate(180%)",
-                              border: "1px solid rgba(255, 255, 255, 0.35)",
+                              background: "rgba(217, 196, 163, 0.14)",
+                              backdropFilter: "blur(20px) saturate(115%)",
+                              WebkitBackdropFilter: "blur(20px) saturate(115%)",
+                              border: "1px solid rgba(217, 196, 163, 0.4)",
                             }
                           : {
                               background: "rgba(255, 255, 255, 0.05)",
-                              backdropFilter: "blur(10px) saturate(180%)",
-                              WebkitBackdropFilter: "blur(10px) saturate(180%)",
+                              backdropFilter: "blur(10px) saturate(115%)",
+                              WebkitBackdropFilter: "blur(10px) saturate(115%)",
                               border: "1px solid rgba(255, 255, 255, 0.15)",
                             }
                       }
@@ -301,15 +307,15 @@ export default function FilterBar({ activeFilters, onFiltersChange }: FilterBarP
                       style={
                         isActive
                           ? {
-                              background: "rgba(255, 255, 255, 0.18)",
-                              backdropFilter: "blur(20px) saturate(180%)",
-                              WebkitBackdropFilter: "blur(20px) saturate(180%)",
-                              border: "1px solid rgba(255, 255, 255, 0.35)",
+                              background: "rgba(217, 196, 163, 0.14)",
+                              backdropFilter: "blur(20px) saturate(115%)",
+                              WebkitBackdropFilter: "blur(20px) saturate(115%)",
+                              border: "1px solid rgba(217, 196, 163, 0.4)",
                             }
                           : {
                               background: "rgba(255, 255, 255, 0.05)",
-                              backdropFilter: "blur(10px) saturate(180%)",
-                              WebkitBackdropFilter: "blur(10px) saturate(180%)",
+                              backdropFilter: "blur(10px) saturate(115%)",
+                              WebkitBackdropFilter: "blur(10px) saturate(115%)",
                               border: "1px solid rgba(255, 255, 255, 0.15)",
                             }
                       }

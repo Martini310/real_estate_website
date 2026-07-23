@@ -9,11 +9,11 @@ import FilterBar, { Filters } from "./FilterBar";
 
 gsap.registerPlugin(ScrollTrigger);
 
-const HERO_IMAGE_DESKTOP =
-  "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=2800&q=90";
-
-const HERO_IMAGE_MOBILE =
-  "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&h=1800&q=90";
+// Hero: własny render marki Peritus (willa z trawertynu w złotej godzinie).
+// Na razie ten sam kadr na desktop i mobile; MOBILE do podmiany, gdy powstanie
+// wersja pionowa (9:16). Next/Image sam optymalizuje format i rozmiary.
+const HERO_IMAGE_DESKTOP = "/hero.png";
+const HERO_IMAGE_MOBILE = "/hero-mobile.png";
 
 interface HeroProps {
   activeFilters: Filters;
@@ -36,10 +36,11 @@ export default function Hero({ activeFilters, onFiltersChange }: HeroProps) {
       ref={sectionRef}
       className="relative min-h-screen w-full flex flex-col overflow-hidden"
     >
-      {/* Background image with parallax - extends full section */}
+      {/* Zdjęcie tła z parallaxem — h-[110%] daje zapas u dołu, żeby ruch
+          parallax nigdy nie odsłonił dolnej krawędzi obrazu (patrz initHeroParallax) */}
       <div
         ref={imageRef}
-        className="absolute inset-0 w-full h-full top-0 pointer-events-none"
+        className="absolute inset-x-0 top-0 h-[110%] pointer-events-none"
       >
         {/* Mobile-optimized hero image */}
         <Image
@@ -61,24 +62,30 @@ export default function Hero({ activeFilters, onFiltersChange }: HeroProps) {
           priority
           quality={90}
         />
-        {/* Gradient: subtle at top, strong at bottom so search bar + grid sit on it */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              "linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.35) 40%, rgba(14,14,14,0.9) 75%, #0E0E0E 100%)",
-          }}
-        />
       </div>
+
+      {/* Gradient STATYCZNY (poza parallaxem) — zawsze zakrywa dolną część sekcji,
+          dając bezszwowe zanikanie zdjęcia w tło strony, bez widocznego „odcięcia" */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            "linear-gradient(to bottom, rgba(15,11,6,0.15) 0%, rgba(15,11,6,0.35) 38%, rgba(15,11,6,0.8) 68%, rgba(15,11,6,0.97) 88%, #0F0B06 100%)",
+        }}
+      />
 
       {/* Headline */}
       <div className="relative z-10 flex-1 flex items-end md:items-center justify-start md:justify-center px-4 pt-28 pb-10 sm:px-6 md:px-8 lg:px-16 min-h-[60vh]">
-        <div className="text-left md:text-center max-w-5xl mx-auto">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-light tracking-tight mb-3 sm:mb-4 text-text-primary">
-            Premium
+        <div className="text-left md:text-center max-w-5xl mx-auto [text-shadow:0_2px_24px_rgba(0,0,0,0.45)]">
+          <p className="mb-4 sm:mb-5 text-xs sm:text-sm font-medium uppercase tracking-[0.35em] text-accent-soft">
+            Peritus&nbsp;·&nbsp;Nieruchomości
+          </p>
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-light tracking-tight mb-4 sm:mb-5 text-text-primary text-balance">
+            Nieruchomości, które{" "}
+            <span className="text-gradient-brand font-normal">mają znaczenie</span>
           </h1>
-          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-light tracking-tight text-text-secondary">
-            Real Estate
+          <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-light tracking-tight text-text-secondary text-balance">
+            Eksperckie doradztwo na rynku nieruchomości
           </h2>
         </div>
       </div>

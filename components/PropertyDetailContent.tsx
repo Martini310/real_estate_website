@@ -203,7 +203,7 @@ export default function PropertyDetailContent({
             </p>
           </div>
           <div>
-            <p className="text-text-secondary text-xs uppercase tracking-widest mb-2">Sypialnie</p>
+            <p className="text-text-secondary text-xs uppercase tracking-widest mb-2">Pokoje</p>
             <p className="text-text-primary text-2xl font-light">{property.bedrooms}</p>
           </div>
           <div>

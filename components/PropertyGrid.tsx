@@ -41,9 +41,15 @@ export default function PropertyGrid({
         return false;
       }
 
-      // Filter by style
-      if (activeFilters.style !== "all" && property.style !== activeFilters.style) {
-        return false;
+      // Filter by price range
+      if (activeFilters.price !== "all") {
+        const [min, max] =
+          activeFilters.price === "5000000+"
+            ? [5000000, Infinity]
+            : activeFilters.price.split("-").map(Number);
+        if (property.price < min || property.price >= max) {
+          return false;
+        }
       }
 
       // Filter by area

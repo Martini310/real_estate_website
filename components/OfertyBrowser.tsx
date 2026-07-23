@@ -12,7 +12,7 @@ import { Property } from "@/types/property";
 export default function OfertyBrowser({ properties }: { properties: Property[] }) {
   const [activeFilters, setActiveFilters] = useState<Filters>({
     type: "all",
-    style: "all",
+    price: "all",
     area: "all",
     bedrooms: null,
     floors: null,

@@ -28,9 +28,9 @@ export default function PropertyCard({ property }: PropertyCardProps) {
 
   const getTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
-      apartment: "Apartament",
+      apartment: "Mieszkanie",
       house: "Dom",
-      commercial: "Lokal komercyjny",
+      commercial: "Lokal",
     };
     return labels[type] || type;
   };
@@ -85,7 +85,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
         </p>
 
         {/* Details affordance - visible on hover (span, bo cała karta to link) */}
-        <span className="px-6 py-2.5 mb-4 border border-white/20 text-text-primary text-xs uppercase tracking-widest opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0 group-hover:border-white/40 group-hover:bg-white/5">
+        <span className="px-6 py-2.5 mb-4 border border-beige/25 text-text-primary text-xs uppercase tracking-widest opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0 group-hover:border-accent/60 group-hover:bg-accent/10 group-hover:text-accent-soft">
           Szczegóły
         </span>
 
@@ -93,7 +93,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
         <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6 text-xs text-text-secondary mb-2">
           {property.bedrooms > 0 && (
             <div>
-              <span className="text-text-primary">Sypialnie: </span>
+              <span className="text-text-primary">Pokoje: </span>
               {property.bedrooms}
             </div>
           )}

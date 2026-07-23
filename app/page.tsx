@@ -12,7 +12,7 @@ const properties = getProperties();
 export default function Home() {
   const [activeFilters, setActiveFilters] = useState<Filters>({
     type: "all",
-    style: "all",
+    price: "all",
     area: "all",
     bedrooms: null,
     floors: null,

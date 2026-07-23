@@ -85,7 +85,7 @@ export default function ContactForm({ propertyTitle }: ContactFormProps) {
           onChange={handleChange}
           required
           className="w-full px-4 py-3 bg-white/5 border border-white/8 text-text-primary placeholder-text-secondary/50 focus:outline-none focus:border-accent/50 transition-colors"
-          placeholder="your@email.com"
+          placeholder="twoj@email.pl"
         />
       </div>
 

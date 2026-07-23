@@ -5,7 +5,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "O mnie",
   description:
-    "Poznaj agenta — wieloletnie doświadczenie na rynku nieruchomości premium, indywidualne podejście i pełne wsparcie na każdym etapie transakcji.",
+    "Poznaj agenta — wieloletnie doświadczenie na rynku nieruchomości, indywidualne podejście i pełne wsparcie na każdym etapie transakcji.",
 };
 
 // TODO: podmień zdjęcie, imię, bio i statystyki na prawdziwe dane agenta.
@@ -38,8 +38,8 @@ export default function AboutPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-center mb-20 md:mb-28">
           <div className="relative aspect-[4/5] w-full max-w-md mx-auto md:mx-0 overflow-hidden rounded-2xl border border-white/10">
             <Image
-              src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=800&h=1000&fit=crop"
-              alt="Zdjęcie agenta nieruchomości"
+              src="/damian.webp"
+              alt="Damian Rożewski — Peritus Nieruchomości"
               fill
               className="object-cover"
               sizes="(max-width: 768px) 100vw, 40vw"
@@ -52,7 +52,7 @@ export default function AboutPage() {
               O mnie
             </p>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-light tracking-tight text-text-primary mb-6">
-              Magdalena Kowalska
+              Damian Rożewski
             </h1>
             <div className="space-y-4 text-text-secondary leading-relaxed">
               <p>
@@ -81,7 +81,7 @@ export default function AboutPage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 mb-20 md:mb-28 border-y border-white/8 py-12">
           {STATS.map((stat) => (
             <div key={stat.label} className="text-center">
-              <p className="text-4xl md:text-5xl font-light text-text-primary mb-2">
+              <p className="text-4xl md:text-5xl font-light text-gradient-brand mb-2">
                 {stat.value}
               </p>
               <p className="text-text-secondary text-sm uppercase tracking-wider">

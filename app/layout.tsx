@@ -1,15 +1,24 @@
 import type { Metadata } from "next";
+import { Montserrat } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
+// Font marki (logo/wordmark). latin-ext → poprawne polskie znaki (Ś, Ó, Ł).
+const montserrat = Montserrat({
+  subsets: ["latin", "latin-ext"],
+  weight: ["500", "600"],
+  variable: "--font-montserrat",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: {
-    default: "Premium Real Estate — luksusowe nieruchomości",
-    template: "%s | Premium Real Estate",
+    default: "Peritus Nieruchomości — ekspercka obsługa rynku premium",
+    template: "%s | Peritus Nieruchomości",
   },
   description:
-    "Luksusowe nieruchomości i prestiżowe inwestycje dopasowane do Twojego stylu życia.",
+    "Peritus Nieruchomości — luksusowe domy, apartamenty i inwestycje w najlepszych lokalizacjach. Eksperckie doradztwo na każdym etapie.",
 };
 
 export default function RootLayout({
@@ -20,7 +29,7 @@ export default function RootLayout({
   modal: React.ReactNode;
 }>) {
   return (
-    <html lang="pl">
+    <html lang="pl" className={montserrat.variable}>
       <body>
         <Header />
         {children}

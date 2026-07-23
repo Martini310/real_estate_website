@@ -9,9 +9,9 @@ export const metadata: Metadata = {
 
 // TODO: podmień dane kontaktowe na prawdziwe dane agenta.
 const CONTACT = [
-  { label: "E-mail", value: "kontakt@premium-nieruchomosci.pl", href: "mailto:kontakt@premium-nieruchomosci.pl" },
+  { label: "E-mail", value: "damian@peritus-nieruchomosci.pl", href: "mailto:damian@peritus-nieruchomosci.pl" },
   { label: "Telefon", value: "+48 600 000 000", href: "tel:+48600000000" },
-  { label: "Adres", value: "ul. Przykładowa 1, 00-001 Warszawa" },
+  { label: "Adres", value: "Bobrownicka 44D/2, 61-306 Poznań" },
   { label: "Godziny", value: "Pon.–Pt. 9:00–18:00" },
 ];
 

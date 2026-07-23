@@ -80,8 +80,10 @@ export const initHeroParallax = (sectionRef: HTMLElement, imageRef: HTMLElement)
     scrub: true,
     onUpdate: (self) => {
       const progress = self.progress;
-      // Background moves up slower than scroll (parallax: image lags behind)
-      const y = -progress * sectionRef.offsetHeight * 0.4;
+      // Background moves up slower than scroll (parallax: image lags behind).
+      // Łagodny współczynnik + zapas wysokości obrazu (h-[110%] w Hero), żeby
+      // parallax nigdy nie odsłonił dolnej krawędzi zdjęcia.
+      const y = -progress * sectionRef.offsetHeight * 0.22;
       gsap.set(imageRef, { y });
     },
   });

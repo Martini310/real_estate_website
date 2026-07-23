@@ -9,6 +9,41 @@
       'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Ciepła, prawie niewidoczna poświata u góry strony — beż i pomarańcz
+       delikatnie ocieplają espresso-czerń, zamiast płaskiego ciemnego tła. */
+    background-color: #0F0B06;
+    background-image:
+      radial-gradient(120% 80% at 50% -10%, rgba(233, 130, 30, 0.05), transparent 60%),
+      radial-gradient(90% 60% at 85% 0%, rgba(217, 196, 163, 0.035), transparent 55%);
+    background-attachment: fixed;
+  }
+
+  /* Zaznaczenie tekstu w kolorze marki */
+  ::selection {
+    background: rgba(233, 130, 30, 0.28);
+    color: #F4ECDE;
+  }
+
+  /* Ciepły pasek przewijania */
+  * {
+    scrollbar-color: rgba(233, 130, 30, 0.35) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(138, 124, 100, 0.4);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(233, 130, 30, 0.5);
+    background-clip: padding-box;
   }
 }
 
@@ -17,18 +52,26 @@
     text-wrap: balance;
   }
 
-  /* Glassmorphism utilities */
+  /* Glassmorphism — ocieplone ku beżowi, żeby pasowało do palety Peritus */
   .glass {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(217, 196, 163, 0.05);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(217, 196, 163, 0.12);
   }
 
   .glass-strong {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(217, 196, 163, 0.09);
     backdrop-filter: blur(30px) saturate(180%);
     -webkit-backdrop-filter: blur(30px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(217, 196, 163, 0.16);
+  }
+
+  /* Pomarańczowo-beżowy gradient tekstu dla akcentów marki */
+  .text-gradient-brand {
+    background: linear-gradient(120deg, #F3A24E 0%, #E9821E 55%, #D9C4A3 130%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
 }
