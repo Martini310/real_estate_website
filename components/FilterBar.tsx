@@ -2,14 +2,15 @@
 
 import { useEffect, useState } from "react";
 
-export type FilterType = "all" | "apartment" | "house" | "commercial";
+export type FilterType = "all" | "apartment" | "house" | "plot" | "commercial";
+// Zakresy w formacie "min-max" lub "min+" (parsowane w PropertyGrid).
 export type PriceRange =
   | "all"
-  | "0-2000000"
-  | "2000000-3500000"
-  | "3500000-5000000"
-  | "5000000+";
-export type AreaRange = "all" | "100-200" | "200-300" | "300-500" | "500+";
+  | "0-400000"
+  | "400000-550000"
+  | "550000-700000"
+  | "700000+";
+export type AreaRange = "all" | "0-40" | "40-60" | "60-90" | "90+";
 
 export interface Filters {
   type: FilterType;
@@ -67,23 +68,24 @@ export default function FilterBar({ activeFilters, onFiltersChange }: FilterBarP
     { label: "Wszystkie", value: "all" },
     { label: "Domy", value: "house" },
     { label: "Mieszkania", value: "apartment" },
+    { label: "Działki", value: "plot" },
     { label: "Lokale", value: "commercial" },
   ];
 
   const priceOptions: { label: string; value: PriceRange }[] = [
     { label: "Każda cena", value: "all" },
-    { label: "do 2 mln zł", value: "0-2000000" },
-    { label: "2–3,5 mln zł", value: "2000000-3500000" },
-    { label: "3,5–5 mln zł", value: "3500000-5000000" },
-    { label: "powyżej 5 mln zł", value: "5000000+" },
+    { label: "do 400 tys. zł", value: "0-400000" },
+    { label: "400–550 tys. zł", value: "400000-550000" },
+    { label: "550–700 tys. zł", value: "550000-700000" },
+    { label: "powyżej 700 tys. zł", value: "700000+" },
   ];
 
-  const areaOptions = [
+  const areaOptions: { label: string; value: AreaRange }[] = [
     { label: "Każda powierzchnia", value: "all" },
-    { label: "100 - 200 m²", value: "100-200" },
-    { label: "200 - 300 m²", value: "200-300" },
-    { label: "300 - 500 m²", value: "300-500" },
-    { label: "500+ m²", value: "500+" },
+    { label: "do 40 m²", value: "0-40" },
+    { label: "40–60 m²", value: "40-60" },
+    { label: "60–90 m²", value: "60-90" },
+    { label: "powyżej 90 m²", value: "90+" },
   ];
 
   return (

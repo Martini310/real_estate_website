@@ -202,14 +202,18 @@ export default function PropertyDetailContent({
               {property.area} <span className="text-sm">m²</span>
             </p>
           </div>
-          <div>
-            <p className="text-text-secondary text-xs uppercase tracking-widest mb-2">Pokoje</p>
-            <p className="text-text-primary text-2xl font-light">{property.bedrooms}</p>
-          </div>
-          <div>
-            <p className="text-text-secondary text-xs uppercase tracking-widest mb-2">Łazienki</p>
-            <p className="text-text-primary text-2xl font-light">{property.bathrooms}</p>
-          </div>
+          {property.bedrooms > 0 && (
+            <div>
+              <p className="text-text-secondary text-xs uppercase tracking-widest mb-2">Pokoje</p>
+              <p className="text-text-primary text-2xl font-light">{property.bedrooms}</p>
+            </div>
+          )}
+          {property.bathrooms > 0 && (
+            <div>
+              <p className="text-text-secondary text-xs uppercase tracking-widest mb-2">Łazienki</p>
+              <p className="text-text-primary text-2xl font-light">{property.bathrooms}</p>
+            </div>
+          )}
         </div>
 
         {/* Description */}

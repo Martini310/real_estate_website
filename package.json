@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "sync:oferty": "node scripts/sync-nieruchomosci-online.mjs"
   },
   "dependencies": {
     "next": "^16.0.0",

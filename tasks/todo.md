@@ -164,3 +164,17 @@ Paleta firmy: **beż + pomarańcz**. Strona zostaje ciemna, ale ocieplona.
 - **Weryfikacja:** `tsc` 0 błędów; preview — kategorie/cena/pokoje działają, logika ceny pokrywa 8 ofert bez luk (3+2+3+0), Damian na `/o-mnie` i `/kontakt`, logo Montserrat równe.
 
 **Nadal placeholder (do podania):** telefon Damiana, godziny otwarcia, „Jan Kowalski" (podpowiedź w polu formularza), linki social. `property.style` zostaje w danych/typie (nieużywane po zmianie filtra na cenę).
+
+## Prawdziwe oferty z nieruchomosci-online.pl ✅ ZROBIONE
+Cel: zastąpić 8 wymyślonych ofert realnymi ofertami agenta (profil: nieruchomosci-online.pl/agenci/damian-rozewski).
+
+- [x] `scripts/sync-nieruchomosci-online.mjs` (`npm run sync:oferty`) — czyta profil agenta + każde ogłoszenie (JSON-LD, galeria `photos.x`, tabela szczegółów, pełny opis) → `data/properties.json`. Idempotentny; przy błędzie parsowania przerywa bez nadpisywania danych.
+- [x] `types/property.ts`: nowy typ `plot` (działka), opcjonalne `sourceUrl`; usunięte nieużywane `style`
+- [x] Filtry przestawione na realne widełki (cena do 400 tys. – 700 tys.+, metraż do 40 – 90+ m²), zakładka „Działki”; zakresy parsowane jedną funkcją `isInRange`
+- [x] Karta/szczegóły ukrywają pola 0 (pokoje/łazienki działki, piętra domu bez danych)
+- [x] Zdjęcia hotlinkowane z `i.st-nieruchomosci-online.pl` przez `next/image` (remotePatterns) — bez wrzucania ~50 MB do repo
+- [x] Telefon agenta z portalu (+48 732 432 920); e-mail nadal placeholder
+
+Review: `tsc` OK, `next build` OK (8 stron SSG), w przeglądarce: 8 kart, filtry typ/cena/metraż zwracają poprawne oferty, 0 zepsutych zdjęć, panel działki pokazuje tylko „Powierzchnia”, brak błędów w konsoli.
+
+Synchronizacja (decyzja do podjęcia): portal nie ma publicznego API do odczytu — przyjmuje tylko importy z programów CRM. Opcje: (A) CRM jako źródło → eksport na portal + na stronę, (B) cykliczne uruchamianie skryptu (cron/GitHub Action + rebuild), (C) WordPress jako źródło → eksport XML na portal.

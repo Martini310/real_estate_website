@@ -30,6 +30,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
     const labels: Record<string, string> = {
       apartment: "Mieszkanie",
       house: "Dom",
+      plot: "Działka",
       commercial: "Lokal",
     };
     return labels[type] || type;
@@ -101,10 +102,12 @@ export default function PropertyCard({ property }: PropertyCardProps) {
             <span className="text-text-primary">Powierzchnia: </span>
             {property.area} m²
           </div>
-          <div>
-            <span className="text-text-primary">Piętra: </span>
-            {property.floors}
-          </div>
+          {property.floors > 0 && (
+            <div>
+              <span className="text-text-primary">Piętra: </span>
+              {property.floors}
+            </div>
+          )}
         </div>
       </div>
     </Link>

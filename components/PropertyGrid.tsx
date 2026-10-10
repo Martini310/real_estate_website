@@ -7,6 +7,14 @@ import { Property } from "@/types/property";
 import { initFadeIn } from "@/lib/animations";
 import { gsap } from "gsap";
 
+/** Zakres "min-max" (max wyłącznie) lub "min+" z FilterBar. */
+function isInRange(value: number, range: string): boolean {
+  const [min, max] = range.endsWith("+")
+    ? [Number(range.slice(0, -1)), Infinity]
+    : range.split("-").map(Number);
+  return value >= min && value < max;
+}
+
 interface PropertyGridProps {
   properties: Property[];
   activeFilters: Filters;
@@ -26,14 +34,6 @@ export default function PropertyGrid({
     }
   }, []);
 
-  const getAreaRange = (area: number): string => {
-    if (area >= 500) return "500+";
-    if (area >= 300) return "300-500";
-    if (area >= 200) return "200-300";
-    if (area >= 100) return "100-200";
-    return "all";
-  };
-
   const filteredProperties = useMemo(() => {
     return properties.filter((property) => {
       // Filter by type
@@ -42,22 +42,13 @@ export default function PropertyGrid({
       }
 
       // Filter by price range
-      if (activeFilters.price !== "all") {
-        const [min, max] =
-          activeFilters.price === "5000000+"
-            ? [5000000, Infinity]
-            : activeFilters.price.split("-").map(Number);
-        if (property.price < min || property.price >= max) {
-          return false;
-        }
+      if (activeFilters.price !== "all" && !isInRange(property.price, activeFilters.price)) {
+        return false;
       }
 
       // Filter by area
-      if (activeFilters.area !== "all") {
-        const propertyAreaRange = getAreaRange(property.area);
-        if (propertyAreaRange !== activeFilters.area) {
-          return false;
-        }
+      if (activeFilters.area !== "all" && !isInRange(property.area, activeFilters.area)) {
+        return false;
       }
 
       // Filter by bedrooms
