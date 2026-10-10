@@ -3,19 +3,56 @@
 @tailwind utilities;
 
 @layer base {
+  /* Zawsze rezerwuj miejsce na pasek przewijania — blokada scrolla przy
+     otwartym panelu oferty nie przesuwa wtedy listy pod spodem. */
+  html {
+    scrollbar-gutter: stable;
+    scroll-behavior: smooth;
+  }
+
+  /* „Ogranicz ruch” w systemie (WCAG 2.3.3): płynny scroll i wszystkie przejścia/animacje
+     CSS wyłączone. Animacje GSAP obsługuje osobno lib/animations.ts (gsap.matchMedia). */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* Widoczny fokus dla klawiatury (WCAG 2.4.7) — jeden styl w całym serwisie.
+     :focus-visible nie pokazuje obrysu przy kliknięciu myszą. */
+  :focus-visible {
+    outline: 2px solid #D9C4A3;
+    outline-offset: 3px;
+  }
+
+  /* #main dostaje fokus z „Przejdź do treści” — sam obszar nie potrzebuje obrysu */
+  #main:focus {
+    outline: none;
+  }
+
   body {
-    @apply bg-background text-text-primary;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    @apply bg-background text-text-primary font-sans;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     /* Ciepła, prawie niewidoczna poświata u góry strony — beż i pomarańcz
-       delikatnie ocieplają espresso-czerń, zamiast płaskiego ciemnego tła. */
+       delikatnie ocieplają espresso-czerń, zamiast płaskiego ciemnego tła.
+       Tylko w pierwszym ekranie (100vh) i bez `background-attachment: fixed`:
+       na stronie głównej leży pod hero, więc koniec gradientu hero styka się
+       z jednolitym tłem bez widocznej „szwy”; brak też repaintu przy scrollu (P9). */
     background-color: #0F0B06;
     background-image:
       radial-gradient(120% 80% at 50% -10%, rgba(233, 130, 30, 0.05), transparent 60%),
       radial-gradient(90% 60% at 85% 0%, rgba(217, 196, 163, 0.035), transparent 55%);
-    background-attachment: fixed;
+    background-size: 100% 100vh;
+    background-repeat: no-repeat;
   }
 
   /* Zaznaczenie tekstu w kolorze marki */
@@ -52,26 +89,11 @@
     text-wrap: balance;
   }
 
-  /* Glassmorphism — ocieplone ku beżowi, żeby pasowało do palety Peritus */
-  .glass {
-    background: rgba(217, 196, 163, 0.05);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid rgba(217, 196, 163, 0.12);
+  /* Poziomy scroll bez widocznego paska (np. zakładki kategorii na telefonie) */
+  .no-scrollbar {
+    scrollbar-width: none;
   }
-
-  .glass-strong {
-    background: rgba(217, 196, 163, 0.09);
-    backdrop-filter: blur(30px) saturate(180%);
-    -webkit-backdrop-filter: blur(30px) saturate(180%);
-    border: 1px solid rgba(217, 196, 163, 0.16);
-  }
-
-  /* Pomarańczowo-beżowy gradient tekstu dla akcentów marki */
-  .text-gradient-brand {
-    background: linear-gradient(120deg, #F3A24E 0%, #E9821E 55%, #D9C4A3 130%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
   }
 }

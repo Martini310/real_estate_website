@@ -1,7 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    qualities: [75, 90],
+    // AVIF (najmniejsze pliki) z fallbackiem WebP — wybór wg nagłówka Accept przeglądarki.
+    formats: ['image/avif', 'image/webp'],
+    // 80 dla hero (duże, ostre zdjęcie), 75 domyślnie dla reszty.
+    qualities: [75, 80],
     remotePatterns: [
       {
         protocol: 'https',
