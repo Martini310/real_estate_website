@@ -3,115 +3,112 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 gsap.registerPlugin(ScrollTrigger);
 
-export const initParallaxCard = (cardRef: HTMLElement, imageRef: HTMLElement) => {
-  const card = cardRef;
-  const image = imageRef;
+/**
+ * Wspólne warunki ruchu (gsap.matchMedia):
+ * - `reduce`  — użytkownik ma w systemie „ogranicz ruch” → brak animacji (WCAG 2.3.3);
+ * - `touch`   — telefon / tablet → mniejsza amplituda (mniej „pływania” pod palcem);
+ * - pozostałe — pełny efekt (desktop z myszą).
+ */
+const MOTION_QUERIES = {
+  // `all` musi być: gsap.matchMedia z obiektem warunków odpala funkcję tylko, gdy
+  // pasuje KTÓRYKOLWIEK z nich — bez tego na zwykłym desktopie parallax nie startował.
+  all: "all",
+  reduce: "(prefers-reduced-motion: reduce)",
+  touch: "(pointer: coarse), (max-width: 767px)",
+};
 
-  if (!card || !image) return null;
+// Miękkie „dociąganie” za przewijaniem (sekundy). `scrub: true` = sztywne 1:1,
+// które na kółku myszy daje schodkowy ruch; 0.6 wygładza go jak w aplikacjach premium.
+const SCRUB = 0.6;
 
-  const scrollTrigger = ScrollTrigger.create({
-    trigger: card,
-    start: "top bottom",
-    end: "bottom top",
-    scrub: true,
-    onUpdate: (self) => {
-      const progress = self.progress;
-      const translateY = gsap.utils.mapRange(0, 1, -40, 40, progress);
-      gsap.set(image, {
-        y: translateY,
+export function prefersReducedMotion() {
+  return typeof window !== "undefined" && window.matchMedia(MOTION_QUERIES.reduce).matches;
+}
+
+/**
+ * Parallax zdjęcia w karcie oferty. Warstwa obrazu ma 120% wysokości ramki
+ * (po 10% zapasu u góry i dołu = 8,33% wysokości warstwy), więc ruch ±7%
+ * wysokości warstwy nigdy nie odsłania krawędzi — niezależnie od rozmiaru karty.
+ */
+export function initParallaxCard(card: HTMLElement, image: HTMLElement) {
+  const mm = gsap.matchMedia();
+
+  mm.add(MOTION_QUERIES, (context) => {
+    const { reduce, touch } = context.conditions as { reduce: boolean; touch: boolean };
+    if (reduce) return;
+    const amplitude = touch ? 4 : 7;
+
+    gsap.fromTo(
+      image,
+      { yPercent: -amplitude },
+      {
+        yPercent: amplitude,
+        ease: "none",
         force3D: true,
+        scrollTrigger: { trigger: card, start: "top bottom", end: "bottom top", scrub: SCRUB },
+      }
+    );
+  });
+
+  return () => mm.revert();
+}
+
+/**
+ * Parallax hero z warstwową głębią: zdjęcie przesuwa się wolniej niż strona,
+ * a treść (nagłówek, przyciski) — pośrednio i płynnie wygasa. Trzy prędkości
+ * (strona 1 · treść ~0,9 · zdjęcie ~0,8) dają wrażenie przestrzeni.
+ *
+ * Zapas obrazu MUSI być ≥ przesunięciu: warstwa ma 120% wysokości sekcji
+ * (patrz Hero), a przesunięcie to maks. 20% wysokości sekcji.
+ */
+export function initHeroParallax(section: HTMLElement, image: HTMLElement, content?: HTMLElement | null) {
+  const mm = gsap.matchMedia();
+
+  mm.add(MOTION_QUERIES, (context) => {
+    const { reduce, touch } = context.conditions as { reduce: boolean; touch: boolean };
+    if (reduce) return;
+    const imageShift = touch ? 0.12 : 0.2;
+    const scrollTrigger = { trigger: section, start: "top top", end: "bottom top", scrub: SCRUB, invalidateOnRefresh: true };
+
+    gsap.to(image, { y: () => -section.offsetHeight * imageShift, ease: "none", scrollTrigger });
+
+    if (content) {
+      gsap.to(content, {
+        y: () => section.offsetHeight * 0.1,
+        opacity: 0,
+        ease: "none",
+        scrollTrigger: { ...scrollTrigger, end: "80% top" },
       });
-    },
+    }
   });
 
-  return () => {
-    scrollTrigger.kill();
-  };
-};
+  return () => mm.revert();
+}
 
-export const initCardHover = (cardRef: HTMLElement, imageRef: HTMLElement) => {
-  const card = cardRef;
-  const image = imageRef;
+/**
+ * Miękkie wejście elementu przy przewinięciu. Bez migotania: jeśli element jest
+ * już widoczny przy starcie (nad linią zgięcia), nie animujemy go wcale —
+ * wcześniej SSR pokazywał treść, GSAP ją chował i dopiero wtedy odsłaniał.
+ */
+export function initReveal(element: HTMLElement) {
+  if (prefersReducedMotion()) return () => {};
+  if (element.getBoundingClientRect().top < window.innerHeight * 0.9) return () => {};
 
-  if (!card || !image) return;
-
-  const handleMouseEnter = () => {
-    gsap.to(card, {
-      scale: 1.02,
-      duration: 0.6,
-      ease: "power2.out",
-    });
-    gsap.to(image, {
-      scale: 1.1,
-      duration: 0.6,
-      ease: "power2.out",
-    });
-  };
-
-  const handleMouseLeave = () => {
-    gsap.to(card, {
-      scale: 1,
-      duration: 0.6,
-      ease: "power2.out",
-    });
-    gsap.to(image, {
-      scale: 1,
-      duration: 0.6,
-      ease: "power2.out",
-    });
-  };
-
-  card.addEventListener("mouseenter", handleMouseEnter);
-  card.addEventListener("mouseleave", handleMouseLeave);
-
-  return () => {
-    card.removeEventListener("mouseenter", handleMouseEnter);
-    card.removeEventListener("mouseleave", handleMouseLeave);
-  };
-};
-
-export const initHeroParallax = (sectionRef: HTMLElement, imageRef: HTMLElement) => {
-  if (!sectionRef || !imageRef) return null;
-
-  const scrollTrigger = ScrollTrigger.create({
-    trigger: sectionRef,
-    start: "top top",
-    end: "bottom top",
-    scrub: true,
-    onUpdate: (self) => {
-      const progress = self.progress;
-      // Background moves up slower than scroll (parallax: image lags behind).
-      // Łagodny współczynnik + zapas wysokości obrazu (h-[110%] w Hero), żeby
-      // parallax nigdy nie odsłonił dolnej krawędzi zdjęcia.
-      const y = -progress * sectionRef.offsetHeight * 0.22;
-      gsap.set(imageRef, { y });
-    },
-  });
-
-  return () => {
-    scrollTrigger.kill();
-  };
-};
-
-export const initFadeIn = (elementRef: HTMLElement) => {
-  if (!elementRef) return;
-
-  gsap.fromTo(
-    elementRef,
-    {
-      opacity: 0,
-      y: 30,
-    },
+  const tween = gsap.fromTo(
+    element,
+    { opacity: 0, y: 30 },
     {
       opacity: 1,
       y: 0,
-      duration: 1,
+      duration: 0.9,
       ease: "power2.out",
-      scrollTrigger: {
-        trigger: elementRef,
-        start: "top 85%",
-        toggleActions: "play none none none",
-      },
+      scrollTrigger: { trigger: element, start: "top 85%", once: true },
     }
   );
-};
+
+  return () => {
+    tween.scrollTrigger?.kill();
+    tween.kill();
+    gsap.set(element, { clearProps: "opacity,transform" });
+  };
+}

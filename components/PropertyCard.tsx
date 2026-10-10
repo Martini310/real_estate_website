@@ -3,38 +3,35 @@
 import { useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { initParallaxCard, initCardHover } from "@/lib/animations";
-import { Property } from "@/types/property";
+import { initParallaxCard } from "@/lib/animations";
+import { PropertyCardData } from "@/types/property";
+import { formatArea, formatPrice, formatPricePerM2, formatPropertyType, formatRooms } from "@/lib/format";
 
 interface PropertyCardProps {
-  property: Property;
+  property: PropertyCardData;
+  /** Karta nad linią zgięcia → zdjęcie bez lazy-load, z preloadem (to element LCP). */
+  priority?: boolean;
 }
 
-export default function PropertyCard({ property }: PropertyCardProps) {
+/**
+ * Karta oferty (audyt §12.1): zdjęcie 3:2 z parallaxem, treść POD zdjęciem —
+ * czytelna niezależnie od jasności zdjęcia, skanowana wzorcem F (lokalizacja →
+ * tytuł → parametry → cena), porównywalna z innymi kartami jak na portalach.
+ */
+export default function PropertyCard({ property, priority = false }: PropertyCardProps) {
   const cardRef = useRef<HTMLAnchorElement>(null);
   const imageRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!cardRef.current || !imageRef.current) return;
-
-    const cleanupParallax = initParallaxCard(cardRef.current, imageRef.current);
-    const cleanupHover = initCardHover(cardRef.current, imageRef.current);
-
-    return () => {
-      cleanupParallax?.();
-      cleanupHover?.();
-    };
+    return initParallaxCard(cardRef.current, imageRef.current);
   }, []);
 
-  const getTypeLabel = (type: string) => {
-    const labels: Record<string, string> = {
-      apartment: "Mieszkanie",
-      house: "Dom",
-      plot: "Działka",
-      commercial: "Lokal",
-    };
-    return labels[type] || type;
-  };
+  const details = [
+    property.bedrooms > 0 ? formatRooms(property.bedrooms) : null,
+    formatArea(property.area),
+    formatPricePerM2(property.price, property.area),
+  ].filter(Boolean);
 
   return (
     <Link
@@ -44,70 +41,57 @@ export default function PropertyCard({ property }: PropertyCardProps) {
       // treści strony). Bez tego Next przewinąłby okno na sam dół do nowego
       // segmentu, a strona główna „uciekłaby" za panelem. Pozycja ma zostać.
       scroll={false}
-      className="group relative block h-[450px] md:h-[500px] lg:h-[calc(100vh/2)] min-h-[300px] w-full overflow-hidden bg-card-bg cursor-pointer"
+      className="group block rounded-card"
     >
-      {/* Image layer 120% height so parallax never reveals card background */}
-      <div
-        ref={imageRef}
-        className="absolute left-0 w-full overflow-hidden"
-        style={{
-          top: "-10%",
-          height: "120%",
-          willChange: "transform",
-          backfaceVisibility: "hidden" as const,
-        }}
-      >
-        <Image
-          src={property.image}
-          alt={property.title}
-          fill
-          className="object-cover"
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 50vw"
-          priority={property.featured}
-        />
+      {/* `isolate`: Safari inaczej nie przycina zaokrągleń, gdy obraz w środku ma transform (parallax) */}
+      <div className="relative isolate aspect-[3/2] overflow-hidden rounded-card bg-card-bg">
+        {/* Warstwa parallax: 120% wysokości ramki (zapas na ruch — patrz initParallaxCard) */}
+        <div
+          ref={imageRef}
+          className="absolute left-0 w-full"
+          style={{ top: "-10%", height: "120%", willChange: "transform" }}
+        >
+          {/* Osobna warstwa na hover — zoom nie koliduje z transformacją parallaxu */}
+          <div className="relative h-full w-full transition-transform duration-700 ease-out group-hover:scale-[1.04]">
+            <Image
+              src={property.image}
+              alt=""
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 600px"
+              preload={priority}
+              fetchPriority={priority ? "high" : undefined}
+            />
+          </div>
+        </div>
+
+        <span className="absolute left-4 top-4 rounded-control bg-background/75 px-2.5 py-1 text-xs text-text-primary">
+          {formatPropertyType(property.type)}
+        </span>
       </div>
 
-      {/* Gradient Overlay - stronger at bottom */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-
-      {/* Hover overlay - darker on hover */}
-      <div className="absolute inset-0 bg-black/0 transition-colors duration-300 group-hover:bg-black/40 z-[1]" />
-
-      {/* Content - centered */}
-      <div className="absolute inset-0 flex flex-col items-center justify-end p-6 md:p-8 pb-6 md:pb-2 z-10 text-center">
-        {/* Title - always visible */}
-        <h3 className="text-3xl md:text-4xl lg:text-5xl font-light text-text-primary leading-tight mb-4">
+      <div className="pt-5">
+        <p className="text-small text-text-secondary">{property.location}</p>
+        <h3 className="mt-1 line-clamp-2 text-h3 text-text-primary transition-colors duration-200 group-hover:text-beige">
           {property.title}
         </h3>
+        <p className="mt-2 text-small text-text-secondary">{details.join(" · ")}</p>
 
-        {/* Type description - visible on hover */}
-        <p className="text-text-secondary text-sm md:text-base mb-4 opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0">
-          {getTypeLabel(property.type)}
-        </p>
-
-        {/* Details affordance - visible on hover (span, bo cała karta to link) */}
-        <span className="px-6 py-2.5 mb-4 border border-beige/25 text-text-primary text-xs uppercase tracking-widest opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0 group-hover:border-accent/60 group-hover:bg-accent/10 group-hover:text-accent-soft">
-          Szczegóły
-        </span>
-
-        {/* Property details - always visible, centered */}
-        <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6 text-xs text-text-secondary mb-2">
-          {property.bedrooms > 0 && (
-            <div>
-              <span className="text-text-primary">Pokoje: </span>
-              {property.bedrooms}
-            </div>
-          )}
-          <div>
-            <span className="text-text-primary">Powierzchnia: </span>
-            {property.area} m²
-          </div>
-          {property.floors > 0 && (
-            <div>
-              <span className="text-text-primary">Piętra: </span>
-              {property.floors}
-            </div>
-          )}
+        <div className="mt-4 flex items-baseline justify-between gap-4">
+          <p className="text-xl text-accent-soft">{formatPrice(property.price)}</p>
+          {/* Stała wskazówka „to jest klikalne” — widoczna też na dotyku (bez hovera) */}
+          <span className="inline-flex items-center gap-1.5 text-small text-text-secondary transition-colors group-hover:text-text-primary">
+            Zobacz ofertę
+            <svg
+              className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
+            </svg>
+          </span>
         </div>
       </div>
     </Link>

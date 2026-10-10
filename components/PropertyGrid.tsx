@@ -1,100 +1,56 @@
 "use client";
 
-import { useMemo, useEffect, useRef } from "react";
-import PropertyCard from "./PropertyCard";
-import { Filters } from "./FilterBar";
-import { Property } from "@/types/property";
-import { initFadeIn } from "@/lib/animations";
+import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
-
-/** Zakres "min-max" (max wyłącznie) lub "min+" z FilterBar. */
-function isInRange(value: number, range: string): boolean {
-  const [min, max] = range.endsWith("+")
-    ? [Number(range.slice(0, -1)), Infinity]
-    : range.split("-").map(Number);
-  return value >= min && value < max;
-}
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import PropertyCard from "./PropertyCard";
+import { PropertyCardData } from "@/types/property";
+import { initReveal, prefersReducedMotion } from "@/lib/animations";
+import Container from "./ui/Container";
 
 interface PropertyGridProps {
-  properties: Property[];
-  activeFilters: Filters;
+  /** Lista już przefiltrowana i posortowana (lib/filters.ts). */
+  properties: PropertyCardData[];
+  /** Ile pierwszych kart ładować priorytetowo (LCP), patrz OfertyBrowser. */
+  priorityCount?: number;
 }
 
-export default function PropertyGrid({
-  properties,
-  activeFilters,
-}: PropertyGridProps) {
+export default function PropertyGrid({ properties, priorityCount = 0 }: PropertyGridProps) {
   const gridRef = useRef<HTMLDivElement>(null);
-  const isInitialMount = useRef(true);
+  const previousRef = useRef(properties);
 
   useEffect(() => {
-    if (gridRef.current && isInitialMount.current) {
-      initFadeIn(gridRef.current);
-      isInitialMount.current = false;
-    }
+    if (gridRef.current) return initReveal(gridRef.current);
   }, []);
 
-  const filteredProperties = useMemo(() => {
-    return properties.filter((property) => {
-      // Filter by type
-      if (activeFilters.type !== "all" && property.type !== activeFilters.type) {
-        return false;
-      }
-
-      // Filter by price range
-      if (activeFilters.price !== "all" && !isInRange(property.price, activeFilters.price)) {
-        return false;
-      }
-
-      // Filter by area
-      if (activeFilters.area !== "all" && !isInRange(property.area, activeFilters.area)) {
-        return false;
-      }
-
-      // Filter by bedrooms
-      if (activeFilters.bedrooms !== null && property.bedrooms !== activeFilters.bedrooms) {
-        return false;
-      }
-
-      // Filter by floors
-      if (activeFilters.floors !== null && property.floors !== activeFilters.floors) {
-        return false;
-      }
-
-      return true;
-    });
-  }, [properties, activeFilters]);
-
+  // Po zmianie filtrów (nie przy pierwszym renderze): przeliczenie pozycji
+  // ScrollTriggerów — inaczej parallax kart liczy się od starych pozycji i obraz
+  // „skacze” — oraz miękkie wejście kart.
   useEffect(() => {
-    if (isInitialMount.current) return;
+    if (previousRef.current === properties || !gridRef.current) return;
+    previousRef.current = properties;
 
-    if (!gridRef.current) return;
-
+    ScrollTrigger.refresh();
     const cards = Array.from(gridRef.current.children);
+    if (cards.length === 0 || prefersReducedMotion()) return;
 
-    if (cards.length === 0) return;
-
-    gsap.set(cards, { opacity: 0, y: 20 });
-
-    gsap.to(cards, {
-      opacity: 1,
-      y: 0,
-      duration: 0.6,
-      ease: "power2.out",
-      stagger: 0.05,
-    });
-  }, [filteredProperties]);
+    gsap.fromTo(
+      cards,
+      { opacity: 0, y: 20 },
+      { opacity: 1, y: 0, duration: 0.6, ease: "power2.out", stagger: 0.05 }
+    );
+  }, [properties]);
 
   return (
-    <section id="properties" className="pt-0 px-4 md:px-8 lg:px-16 pb-24 bg-background">
-      <div className="max-w-7xl mx-auto">
-
-        <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
-          {filteredProperties.map((property) => (
-            <PropertyCard key={property.id} property={property} />
+    // id="properties" — cel rozmycia tła przy otwartym panelu oferty (PropertyModal)
+    <section id="properties">
+      <Container>
+        <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-12 lg:gap-x-8 lg:gap-y-14">
+          {properties.map((property, idx) => (
+            <PropertyCard key={property.id} property={property} priority={idx < priorityCount} />
           ))}
         </div>
-      </div>
+      </Container>
     </section>
   );
 }

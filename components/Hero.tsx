@@ -1,101 +1,111 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import Image from "next/image";
+import { getImageProps } from "next/image";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { initHeroParallax } from "@/lib/animations";
-import FilterBar, { Filters } from "./FilterBar";
+import Container from "./ui/Container";
+import { ButtonLink } from "./ui/Button";
+import heroDesktop from "@/public/hero.jpg";
+import heroMobile from "@/public/hero-mobile.jpg";
 
 gsap.registerPlugin(ScrollTrigger);
 
-// Hero: własny render marki Peritus (willa z trawertynu w złotej godzinie).
-// Na razie ten sam kadr na desktop i mobile; MOBILE do podmiany, gdy powstanie
-// wersja pionowa (9:16). Next/Image sam optymalizuje format i rozmiary.
-const HERO_IMAGE_DESKTOP = "/hero.png";
-const HERO_IMAGE_MOBILE = "/hero-mobile.png";
+// Art direction przez <picture>: przeglądarka pobiera TYLKO kadr pasujący do
+// ekranu (poziomy ≥640 px, pionowy 9:16 poniżej). Bez `preload` — przy <picture>
+// wymusiłby pobranie obu; zamiast tego fetchPriority="high" + eager (element LCP).
+// Statyczny import → wymiary i rozmyty placeholder generowane przy buildzie,
+// więc zamiast czarnego ekranu przed załadowaniem widać miękki zarys zdjęcia.
+const heroImageBase = { alt: "", fill: true, sizes: "100vw", quality: 80, placeholder: "blur" } as const;
+const {
+  props: { srcSet: heroMobileSrcSet },
+} = getImageProps({ ...heroImageBase, src: heroMobile });
+const {
+  props: { srcSet: heroDesktopSrcSet, ...heroImgProps },
+} = getImageProps({
+  ...heroImageBase,
+  src: heroDesktop,
+  fetchPriority: "high",
+  loading: "eager",
+});
 
-interface HeroProps {
-  activeFilters: Filters;
-  onFiltersChange: (filters: Filters) => void;
-}
-
-export default function Hero({ activeFilters, onFiltersChange }: HeroProps) {
+export default function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
   const imageRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!sectionRef.current || !imageRef.current) return;
 
-    const cleanup = initHeroParallax(sectionRef.current, imageRef.current);
-    return () => cleanup?.();
+    return initHeroParallax(sectionRef.current, imageRef.current, contentRef.current);
   }, []);
 
   return (
     <section
       ref={sectionRef}
-      className="relative min-h-screen w-full flex flex-col overflow-hidden"
+      // 88svh: na telefonie liczone bez paska przeglądarki, a pod hero wystaje
+      // początek kolejnej sekcji — naturalna zachęta do przewinięcia.
+      className="relative flex min-h-[88svh] w-full flex-col overflow-hidden"
     >
-      {/* Zdjęcie tła z parallaxem — h-[110%] daje zapas u dołu, żeby ruch
-          parallax nigdy nie odsłonił dolnej krawędzi obrazu (patrz initHeroParallax) */}
-      <div
-        ref={imageRef}
-        className="absolute inset-x-0 top-0 h-[110%] pointer-events-none"
-      >
-        {/* Mobile-optimized hero image */}
-        <Image
-          src={HERO_IMAGE_MOBILE}
-          alt=""
-          fill
-          className="object-cover sm:hidden"
-          sizes="100vw"
-          priority
-          quality={90}
-        />
-        {/* Desktop / tablet hero image */}
-        <Image
-          src={HERO_IMAGE_DESKTOP}
-          alt=""
-          fill
-          className="object-cover hidden sm:block"
-          sizes="100vw"
-          priority
-          quality={90}
-        />
+      {/* Zdjęcie tła z parallaxem — h-[120%] = zapas ≥ maks. przesunięciu (20% wysokości
+          sekcji), więc ruch nigdy nie odsłania dolnej krawędzi obrazu (patrz initHeroParallax) */}
+      <div ref={imageRef} className="absolute inset-x-0 top-0 h-[120%] pointer-events-none">
+        <picture>
+          <source media="(max-width: 639px)" srcSet={heroMobileSrcSet} />
+          <source media="(min-width: 640px)" srcSet={heroDesktopSrcSet} />
+          <img {...heroImgProps} className="object-cover" />
+        </picture>
       </div>
 
-      {/* Gradient STATYCZNY (poza parallaxem) — zawsze zakrywa dolną część sekcji,
-          dając bezszwowe zanikanie zdjęcia w tło strony, bez widocznego „odcięcia" */}
+      {/* Przyciemnienie STATYCZNE (poza parallaxem), tylko tam, gdzie stoi tekst:
+          od dołu (płynne przejście w tło strony) + od lewej na desktopie.
+          Góra i prawa strona zdjęcia zostają jasne i naturalne. */}
+      {/* Mobile: tekst zajmuje większą część kadru → przyciemnienie sięga wyżej */}
       <div
-        className="absolute inset-0 pointer-events-none"
+        className="absolute inset-0 md:hidden pointer-events-none"
         style={{
           background:
-            "linear-gradient(to bottom, rgba(15,11,6,0.15) 0%, rgba(15,11,6,0.35) 38%, rgba(15,11,6,0.8) 68%, rgba(15,11,6,0.97) 88%, #0F0B06 100%)",
+            "linear-gradient(to top, #0F0B06 0%, rgba(15,11,6,0.92) 25%, rgba(15,11,6,0.72) 50%, rgba(15,11,6,0.4) 70%, rgba(15,11,6,0) 88%)",
+        }}
+      />
+      <div
+        className="absolute inset-0 hidden md:block pointer-events-none"
+        style={{
+          background:
+            "linear-gradient(to top, #0F0B06 0%, rgba(15,11,6,0.9) 18%, rgba(15,11,6,0.55) 42%, rgba(15,11,6,0) 70%)",
+        }}
+      />
+      <div
+        className="absolute inset-0 hidden md:block pointer-events-none"
+        style={{
+          background:
+            "linear-gradient(to right, rgba(15,11,6,0.6) 0%, rgba(15,11,6,0.25) 38%, rgba(15,11,6,0) 62%)",
         }}
       />
 
-      {/* Headline */}
-      <div className="relative z-10 flex-1 flex items-end md:items-center justify-start md:justify-center px-4 pt-28 pb-10 sm:px-6 md:px-8 lg:px-16 min-h-[60vh]">
-        <div className="text-left md:text-center max-w-5xl mx-auto [text-shadow:0_2px_24px_rgba(0,0,0,0.45)]">
-          <p className="mb-4 sm:mb-5 text-xs sm:text-sm font-medium uppercase tracking-[0.35em] text-accent-soft">
-            Peritus&nbsp;·&nbsp;Nieruchomości
-          </p>
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-light tracking-tight mb-4 sm:mb-5 text-text-primary text-balance">
-            Nieruchomości, które{" "}
-            <span className="text-gradient-brand font-normal">mają znaczenie</span>
+      <Container className="relative z-10 flex flex-1 items-end pt-28 pb-16 md:pb-24">
+        <div ref={contentRef} className="max-w-2xl">
+          <p className="font-brand text-eyebrow uppercase text-beige mb-5">Poznań i okolice</p>
+          <h1 className="text-display font-normal text-text-primary text-balance mb-5">
+            Spokojna sprzedaż i&nbsp;zakup nieruchomości
           </h1>
-          <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-light tracking-tight text-text-secondary text-balance">
-            Eksperckie doradztwo na rynku nieruchomości
-          </h2>
+          <p className="text-lg leading-relaxed text-text-primary/85 max-w-xl mb-8">
+            Mieszkania, domy i działki w&nbsp;Poznaniu i&nbsp;okolicach. Prowadzę Cię
+            od pierwszej prezentacji do aktu notarialnego.
+          </p>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <ButtonLink href="#oferty">Zobacz oferty</ButtonLink>
+            <ButtonLink
+              href="#wycena"
+              variant="secondary"
+              className="bg-background/30 backdrop-blur-sm"
+            >
+              Bezpłatna wycena
+            </ButtonLink>
+          </div>
         </div>
-      </div>
-
-      {/* Filter bar at bottom of hero - on gradient */}
-      <div className="relative z-10 w-full px-4 md:px-8 lg:px-16 pb-6 md:pb-10">
-        <div className="max-w-7xl mx-auto">
-          <FilterBar activeFilters={activeFilters} onFiltersChange={onFiltersChange} />
-        </div>
-      </div>
+      </Container>
     </section>
   );
 }

@@ -24,18 +24,11 @@ export default function BackToTop() {
       type="button"
       onClick={scrollToTop}
       aria-label="Powrót na górę"
-      className={`fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ease-in-out ${
+      className={`fixed bottom-6 right-6 z-40 w-12 h-12 rounded-full flex items-center justify-center border border-line-strong bg-background/60 shadow-e1 backdrop-blur-md transition-all duration-300 ease-in-out hover:bg-background/80 ${
         visible
           ? "opacity-100 pointer-events-auto"
           : "opacity-0 pointer-events-none"
       }`}
-      style={{
-        background: "rgba(255, 255, 255, 0.08)",
-        backdropFilter: "blur(16px) saturate(180%)",
-        WebkitBackdropFilter: "blur(16px) saturate(180%)",
-        border: "1px solid rgba(255, 255, 255, 0.12)",
-        boxShadow: "0 4px 24px rgba(0, 0, 0, 0.2)",
-      }}
     >
       <svg
         width="20"

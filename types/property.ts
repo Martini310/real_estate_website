@@ -36,3 +36,13 @@ export interface Property {
   /** Oryginalne ogłoszenie (np. nieruchomosci-online.pl), z którego zaimportowano ofertę */
   sourceUrl?: string;
 }
+
+/**
+ * Dane potrzebne karcie i filtrom — tylko to trafia do przeglądarki na listach
+ * (bez opisów i galerii), żeby payload nie rósł z liczbą ofert z WordPressa.
+ */
+export type PropertyCardData = Pick<
+  Property,
+  "id" | "slug" | "title" | "location" | "price" | "area" | "type" | "bedrooms" | "image"
+>;
+

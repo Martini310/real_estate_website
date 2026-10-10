@@ -1,30 +1,29 @@
 import type { Metadata } from "next";
-import { getProperties } from "@/lib/properties";
+import { getPropertyCards } from "@/lib/properties";
 import OfertyBrowser from "@/components/OfertyBrowser";
+import Container from "@/components/ui/Container";
+import { formatOffers } from "@/lib/format";
 
 export const metadata: Metadata = {
   title: "Oferty",
   description:
-    "Przeglądaj nasze luksusowe nieruchomości — domy, apartamenty i lokale komercyjne w najlepszych lokalizacjach w Polsce.",
+    "Aktualne oferty mieszkań, domów i działek w Poznaniu i okolicach — z ceną, metrażem i ceną za m². Filtruj i umów prezentację.",
 };
 
 export default function OfertyPage() {
-  const properties = getProperties();
+  const properties = getPropertyCards();
 
   return (
-    <main className="min-h-screen bg-background pt-28 md:pt-32 pb-8">
-      <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 mb-8 md:mb-10">
-        <h1 className="text-4xl md:text-5xl font-light tracking-tight text-text-primary">
-          Oferty
-        </h1>
-        <p className="text-text-secondary mt-3 max-w-2xl">
-          Przeglądaj dostępne nieruchomości i zawęź wyniki filtrami. Kliknij
-          ofertę, aby zobaczyć szczegóły.
+    <main className="min-h-screen bg-background pt-28 md:pt-32 pb-24">
+      <Container className="mb-8 md:mb-10">
+        <h1 className="text-h1 font-light text-text-primary">Oferty</h1>
+        <p className="text-body text-text-secondary mt-3 max-w-2xl">
+          {formatOffers(properties.length)} w Poznaniu i okolicach.
         </p>
-      </div>
-      <div className="px-4 md:px-8 lg:px-16">
-        <OfertyBrowser properties={properties} />
-      </div>
+      </Container>
+      {/* Kolejność nagłówków h1 → h2 → h3 (karty) dla czytników ekranu */}
+      <h2 className="sr-only">Lista ofert</h2>
+      <OfertyBrowser properties={properties} priorityCount={2} />
     </main>
   );
 }

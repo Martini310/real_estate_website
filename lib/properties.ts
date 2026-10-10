@@ -6,13 +6,28 @@
 // żadnych zmian w komponentach UI.
 
 import propertiesData from "@/data/properties.json";
-import type { Property } from "@/types/property";
+import type { Property, PropertyCardData } from "@/types/property";
 
 const properties = propertiesData as unknown as Property[];
 
 /** Wszystkie oferty. */
 export function getProperties(): Property[] {
   return properties;
+}
+
+/** Wszystkie oferty w wersji „kartowej” (listy, filtry) — bez opisów i galerii. */
+export function getPropertyCards(): PropertyCardData[] {
+  return properties.map(({ id, slug, title, location, price, area, type, bedrooms, image }) => ({
+    id,
+    slug,
+    title,
+    location,
+    price,
+    area,
+    type,
+    bedrooms,
+    image,
+  }));
 }
 
 /** Oferty wyróżnione (np. na stronę główną). */
