@@ -1,259 +1,218 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { gsap } from "gsap";
-import { SplitText } from "gsap/all";
 import AgentCard from "./AgentCard";
 import ContactForm from "./ContactForm";
+import PropertyGallery, { GALLERY_CONTROL } from "./PropertyGallery";
+import Button, { ButtonLink } from "./ui/Button";
+import PhoneIcon from "./ui/PhoneIcon";
 import { Property } from "@/types/property";
+import { formatNumber, formatPrice, formatPricePerM2, formatPropertyType } from "@/lib/format";
+import { prefersReducedMotion } from "@/lib/animations";
 
 interface PropertyDetailContentProps {
   property: Property;
-  /** Gdy podane → renderuje przycisk powrotu w lewym górnym rogu (tryb panelu). */
+  /** Gdy podane → tryb panelu: przycisk „Zamknij” na galerii. */
   onBack?: () => void;
-  /** Gdy podane → renderuje link powrotu nad tytułem (tryb pełnej podstrony). */
+  /** Gdy podane → tryb pełnej podstrony: link powrotu nad tytułem. */
   backHref?: string;
-}
-
-function formatPrice(price: number) {
-  return new Intl.NumberFormat("pl-PL", {
-    style: "currency",
-    currency: "PLN",
-    maximumFractionDigits: 0,
-  }).format(price);
+  /** Id nagłówka — panel wskazuje go w `aria-labelledby` (nazwa dialogu = tytuł oferty). */
+  titleId?: string;
 }
 
 /**
  * Współdzielona treść szczegółów oferty — używana zarówno przez wysuwany panel
  * (`PropertyModal`, intercepting route), jak i przez pełną podstronę
  * `/oferta/[slug]`. Dzięki temu obie ścieżki wyglądają identycznie.
+ *
+ * Układ (audyt U4): cena i akcje zawsze pod ręką — na szerokim ekranie w
+ * przyklejonej prawej kolumnie, na telefonie w przyklejonym pasku na dole.
  */
-export default function PropertyDetailContent({
-  property,
-  onBack,
-  backHref,
-}: PropertyDetailContentProps) {
-  const titleRef = useRef<HTMLHeadingElement>(null);
-  const locationPriceRef = useRef<HTMLDivElement>(null);
-  const imageContainerRef = useRef<HTMLDivElement>(null);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const imageAnimatingRef = useRef(false);
+export default function PropertyDetailContent({ property, onBack, backHref, titleId }: PropertyDetailContentProps) {
+  const headingRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLElement>(null);
+  const tel = `tel:${property.agent.phone.replace(/\s/g, "")}`;
 
-  // Reveal tytułu i ceny przy wejściu (niezależny od animacji wysuwania panelu)
+  // Spokojne wejście tytułu i lokalizacji (jedno, krótkie — tytuł to najważniejsza
+  // informacja, nie może czekać na animację słowo po słowie).
   useEffect(() => {
-    const ctx = gsap.context(() => {
-      if (titleRef.current) {
-        try {
-          const split = new SplitText(titleRef.current, { type: "words" });
-          gsap.from(split.words, {
-            opacity: 0,
-            duration: 1.2,
-            ease: "sine.out",
-            stagger: 0.12,
-          });
-        } catch {
-          // SplitText to plugin premium — gdyby był niedostępny, prosty fade
-          gsap.from(titleRef.current, { opacity: 0, duration: 0.8 });
-        }
-      }
-      if (locationPriceRef.current) {
-        gsap.fromTo(
-          locationPriceRef.current,
-          { opacity: 0, y: 20 },
-          { opacity: 1, y: 0, duration: 0.8, delay: 0.3, ease: "power3.out" }
-        );
-      }
-    });
-    return () => ctx.revert();
+    if (!headingRef.current || prefersReducedMotion()) return;
+    const tween = gsap.fromTo(
+      headingRef.current,
+      { opacity: 0, y: 16 },
+      { opacity: 1, y: 0, duration: 0.5, delay: 0.15, ease: "power2.out" }
+    );
+    return () => {
+      tween.kill();
+    };
   }, [property.slug]);
 
-  const crossfadeTo = (next: (prev: number) => number) => {
-    if (imageAnimatingRef.current || !imageContainerRef.current) return;
-    imageAnimatingRef.current = true;
-    gsap.to(imageContainerRef.current, {
-      opacity: 0,
-      duration: 0.3,
-      ease: "power2.inOut",
-      onComplete: () => {
-        setCurrentImageIndex(next);
-        gsap.to(imageContainerRef.current, {
-          opacity: 1,
-          duration: 0.4,
-          ease: "power2.inOut",
-          onComplete: () => {
-            imageAnimatingRef.current = false;
-          },
-        });
-      },
-    });
+  // Przewinięcie do formularza bez kotwicy w adresie (kotwica tworzyłaby wpis
+  // historii psujący „wstecz” w panelu) + fokus na pierwsze pole.
+  const scrollToForm = () => {
+    const form = formRef.current;
+    if (!form) return;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    form.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+    form.querySelector("input")?.focus({ preventScroll: true });
   };
 
-  const handlePrev = () =>
-    crossfadeTo((p) => (p === 0 ? property.gallery.length - 1 : p - 1));
-  const handleNext = () =>
-    crossfadeTo((p) => (p === property.gallery.length - 1 ? 0 : p + 1));
-  const goTo = (idx: number) => {
-    if (idx !== currentImageIndex) crossfadeTo(() => idx);
-  };
+  const params = [
+    { label: "Powierzchnia", value: formatNumber(property.area), unit: "m²" },
+    property.bedrooms > 0 && { label: "Pokoje", value: String(property.bedrooms) },
+    property.bathrooms > 0 && { label: "Łazienki", value: String(property.bathrooms) },
+    property.yearBuilt > 0 && { label: "Rok budowy", value: String(property.yearBuilt) },
+  ].filter((param): param is { label: string; value: string; unit?: string } => Boolean(param));
 
   return (
     <>
-      {/* Hero Image Gallery */}
-      <div
-        className="relative w-full h-[80vh] bg-gradient-to-b from-white/5 to-transparent overflow-hidden"
-        style={{ willChange: "transform" }}
-      >
+      {/* Galeria */}
+      <div className={`relative w-full overflow-hidden bg-card-bg ${onBack ? "h-[62vh]" : "h-[80vh]"}`}>
+        {/* Zamknięcie panelu: „✕” w prawym górnym rogu (konwencja modala) — nie
+            chevron „‹”, który mylił się z „poprzednie zdjęcie” tuż pod nim */}
         {onBack && (
           <button
+            type="button"
             onClick={onBack}
-            className="absolute top-6 left-6 z-30 text-text-primary hover:text-accent transition-colors p-2"
-            aria-label="Zamknij panel szczegółów"
+            className={`absolute top-5 right-5 z-30 h-11 gap-1.5 pl-3 pr-4 ${GALLERY_CONTROL}`}
+            aria-label="Zamknij szczegóły oferty"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 6l12 12M18 6L6 18" />
             </svg>
+            <span className="text-small">Zamknij</span>
           </button>
         )}
 
-        <div ref={imageContainerRef} className="relative w-full h-full" style={{ opacity: 1 }}>
-          <Image
-            src={property.gallery[currentImageIndex]}
-            alt={`${property.title} – zdjęcie ${currentImageIndex + 1}`}
-            fill
-            className="object-cover"
-            priority
-            sizes="100vw"
-          />
-        </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-panel-bg via-panel-bg/20 to-transparent" />
-
-        {/* Previous Image Button */}
-        <button
-          onClick={handlePrev}
-          className="absolute left-6 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full border border-white/20 text-text-primary hover:border-white/50 hover:bg-white/5 transition-all flex items-center justify-center"
-          aria-label="Poprzednie zdjęcie"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-
-        {/* Next Image Button */}
-        <button
-          onClick={handleNext}
-          className="absolute right-6 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full border border-white/20 text-text-primary hover:border-white/50 hover:bg-white/5 transition-all flex items-center justify-center"
-          aria-label="Następne zdjęcie"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
-
-        {/* Image Counter */}
-        <div className="absolute bottom-6 right-6 z-20 px-3 py-1 rounded-full bg-black/40 border border-white/10 text-text-primary text-sm font-light">
-          {currentImageIndex + 1} / {property.gallery.length}
-        </div>
-
-        {/* Image Indicators */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-2">
-          {property.gallery.map((_, idx) => (
-            <button
-              key={idx}
-              onClick={() => goTo(idx)}
-              className={`h-2 rounded-full transition-all ${
-                idx === currentImageIndex ? "w-6 bg-accent" : "w-2 bg-white/30 hover:bg-white/50"
-              }`}
-              aria-label={`Przejdź do zdjęcia ${idx + 1}`}
-            />
-          ))}
-        </div>
+        <PropertyGallery
+          images={property.gallery}
+          title={property.title}
+          sizes={onBack ? "(min-width: 1024px) 78vw, 100vw" : "100vw"}
+        />
       </div>
 
-      {/* Content */}
-      <div className="px-6 md:px-8 py-8 max-w-4xl mx-auto">
+      <div className="mx-auto max-w-6xl px-6 py-8 md:px-8 md:py-10">
         {backHref && (
           <Link
             href={backHref}
-            className="inline-flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors text-sm mb-6"
+            className="mb-6 inline-flex items-center gap-2 text-small text-text-secondary transition-colors hover:text-text-primary"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
             </svg>
             Wróć do ofert
           </Link>
         )}
 
-        {/* Title Section */}
-        <h1 ref={titleRef} className="text-4xl md:text-5xl font-light text-text-primary mb-2 leading-tight">
-          {property.title}
-        </h1>
-        <div ref={locationPriceRef} className="flex items-center justify-between mb-8 pb-6 border-b border-white/8">
-          <div className="text-text-secondary text-sm">{property.location}</div>
-          <div className="text-accent font-light text-lg">{formatPrice(property.price)}</div>
-        </div>
-
-        {/* Key Info Row */}
-        <div className="grid grid-cols-3 gap-4 mb-8 pb-8 border-b border-white/8">
-          <div>
-            <p className="text-text-secondary text-xs uppercase tracking-widest mb-2">Powierzchnia</p>
-            <p className="text-text-primary text-2xl font-light">
-              {property.area} <span className="text-sm">m²</span>
+        <div className="xl:grid xl:grid-cols-[minmax(0,1fr)_320px] xl:gap-12">
+          {/* Tytuł */}
+          <div ref={headingRef} className="xl:col-start-1">
+            <p className="mb-3 font-brand text-eyebrow uppercase text-beige">
+              {formatPropertyType(property.type)}
+            </p>
+            <h1 id={titleId} className="text-h1 font-light text-text-primary">
+              {property.title}
+            </h1>
+            <p className="mt-3 text-body text-text-secondary">
+              {property.location}
             </p>
           </div>
-          {property.bedrooms > 0 && (
-            <div>
-              <p className="text-text-secondary text-xs uppercase tracking-widest mb-2">Pokoje</p>
-              <p className="text-text-primary text-2xl font-light">{property.bedrooms}</p>
-            </div>
-          )}
-          {property.bathrooms > 0 && (
-            <div>
-              <p className="text-text-secondary text-xs uppercase tracking-widest mb-2">Łazienki</p>
-              <p className="text-text-primary text-2xl font-light">{property.bathrooms}</p>
-            </div>
-          )}
-        </div>
 
-        {/* Description */}
-        <div className="mb-8 pb-8 border-b border-white/8">
-          <h2 className="text-text-primary text-lg font-light mb-4">O nieruchomości</h2>
-          <div className="space-y-4">
-            {property.description.split("\n").map((paragraph, idx) => (
-              <p key={idx} className="text-text-secondary text-sm leading-relaxed">
-                {paragraph}
+          {/* Cena + akcje: pod tytułem na węższych ekranach, przyklejona kolumna na ≥1280 px */}
+          <aside className="mt-6 xl:col-start-2 xl:row-span-2 xl:row-start-1 xl:mt-0">
+            <div
+              className={`rounded-card border border-line bg-beige/[0.03] p-6 xl:sticky ${onBack ? "xl:top-8" : "xl:top-28"}`}
+            >
+              <p className="text-small text-text-secondary">Cena</p>
+              <p className="mt-1 text-[2rem] leading-tight text-accent-soft">{formatPrice(property.price)}</p>
+              <p className="mt-1 text-small text-text-secondary">
+                {formatPricePerM2(property.price, property.area)}
               </p>
-            ))}
-          </div>
-        </div>
 
-        {/* Features */}
-        <div className="mb-8 pb-8 border-b border-white/8">
-          <h2 className="text-text-primary text-lg font-light mb-4">Najważniejsze cechy</h2>
-          <div className="grid grid-cols-2 gap-3">
-            {property.features.map((feature, idx) => (
-              <div key={idx} className="flex items-start gap-2">
-                <div className="w-1 h-1 rounded-full bg-accent mt-2 flex-shrink-0" />
-                <p className="text-text-secondary text-sm">{feature}</p>
+              {/* Na telefonie te akcje są w przyklejonym pasku na dole */}
+              <div className="mt-6 hidden gap-3 md:grid">
+                <Button onClick={scrollToForm} className="w-full">
+                  Umów prezentację
+                </Button>
+                <ButtonLink href={tel} variant="secondary" className="w-full">
+                  <PhoneIcon />
+                  {property.agent.phone}
+                </ButtonLink>
               </div>
-            ))}
+              <p className="mt-4 hidden text-small text-text-secondary md:block">
+                Odpowiadam zwykle tego samego dnia roboczego.
+              </p>
+            </div>
+          </aside>
+
+          <div className="xl:col-start-1">
+            {/* Parametry */}
+            <dl className="mt-8 grid grid-cols-2 gap-6 border-y border-line py-8 sm:grid-cols-4">
+              {params.map((param) => (
+                <div key={param.label}>
+                  <dt className="mb-2 text-xs uppercase tracking-wider text-text-secondary">{param.label}</dt>
+                  <dd className="text-2xl font-light text-text-primary">
+                    {param.value} {param.unit && <span className="text-small">{param.unit}</span>}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+
+            {/* Opis */}
+            <section className="border-b border-line py-8">
+              <h2 className="mb-4 text-h3 text-text-primary">O nieruchomości</h2>
+              <div className="space-y-4">
+                {property.description.split("\n").map((paragraph, idx) => (
+                  <p key={idx} className="max-w-prose text-body text-text-secondary">
+                    {paragraph}
+                  </p>
+                ))}
+              </div>
+            </section>
+
+            {/* Cechy */}
+            <section className="border-b border-line py-8">
+              <h2 className="mb-4 text-h3 text-text-primary">Najważniejsze cechy</h2>
+              <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {property.features.map((feature, idx) => (
+                  <li key={idx} className="flex items-start gap-2 text-small text-text-secondary">
+                    <span aria-hidden="true" className="mt-2.5 h-1 w-1 flex-shrink-0 rounded-full bg-beige" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            {/* Opiekun */}
+            <section className="border-b border-line py-8">
+              <h2 className="mb-4 text-h3 text-text-primary">Twój opiekun</h2>
+              <AgentCard agent={property.agent} />
+            </section>
+
+            {/* Formularz */}
+            <section ref={formRef} className="scroll-mt-6 py-8">
+              <h2 className="mb-2 text-h3 text-text-primary">Umów prezentację</h2>
+              <p className="mb-6 text-small text-text-secondary">
+                Zostaw numer — oddzwonię i ustalimy dogodny termin.
+              </p>
+              <ContactForm propertyTitle={property.title} />
+            </section>
           </div>
         </div>
+      </div>
 
-        {/* Agent */}
-        <div className="mb-8 pb-8 border-b border-white/8">
-          <h2 className="text-text-primary text-lg font-light mb-4">Twój opiekun</h2>
-          <AgentCard agent={property.agent} />
-        </div>
-
-        {/* Contact Form */}
-        <div className="mb-8">
-          <h2 className="text-text-primary text-lg font-light mb-4">Umów oglądanie</h2>
-          <ContactForm propertyTitle={property.title} />
-        </div>
-
-        <div className="h-12" />
+      {/* Przyklejony pasek akcji (telefon). `sticky`, nie `fixed`: w panelu przodek ma
+          transform (animacja wjazdu), przy którym `fixed` przewijałby się razem z treścią. */}
+      <div className="sticky bottom-0 z-30 grid grid-cols-2 gap-3 border-t border-line bg-background/90 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-md md:hidden">
+        <ButtonLink href={tel} variant="secondary" size="sm" className="whitespace-nowrap">
+          <PhoneIcon />
+          Zadzwoń
+        </ButtonLink>
+        <Button onClick={scrollToForm} size="sm" className="whitespace-nowrap">
+          Umów prezentację
+        </Button>
       </div>
     </>
   );

@@ -1,6 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
+import { useLeadSubmit } from "@/lib/useLeadSubmit";
+import { siteConfig } from "@/lib/site";
+import Button from "./ui/Button";
+import Field from "./ui/Field";
 
 interface ContactFormProps {
   /** Tytuł oferty, której dotyczy zapytanie. Pominięty na ogólnej stronie kontaktu. */
@@ -8,121 +12,100 @@ interface ContactFormProps {
 }
 
 export default function ContactForm({ propertyTitle }: ContactFormProps) {
-  const [formState, setFormState] = useState({
+  // Unikalne id pól — formularz może wystąpić kilka razy na stronie (panel + podstrona).
+  const fieldId = useId();
+  // Przy ofercie wiadomość jest gotowa — wystarczy podać imię i telefon (mniej pisania = więcej zapytań).
+  const initialState = {
     name: "",
+    phone: "",
     email: "",
-    message: "",
-  });
+    message: propertyTitle ? `Dzień dobry, proszę o kontakt w sprawie oferty: ${propertyTitle}.` : "",
+  };
+  const [formState, setFormState] = useState(initialState);
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">(
-    "idle"
-  );
+  const { status, isSubmitting, submit } = useLeadSubmit(propertyTitle ? "oferta" : "kontakt");
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormState((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormState((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    setSubmitStatus("idle");
-
-    try {
-      // TODO (Faza 4): podłączyć realną wysyłkę (API route / e-mail / WP)
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      console.log("Form submitted:", {
-        ...formState,
-        ...(propertyTitle ? { property: propertyTitle } : {}),
-      });
-
-      setSubmitStatus("success");
-      setFormState({ name: "", email: "", message: "" });
-
-      setTimeout(() => setSubmitStatus("idle"), 3000);
-    } catch (error) {
-      setSubmitStatus("error");
-      setTimeout(() => setSubmitStatus("idle"), 3000);
-    } finally {
-      setIsSubmitting(false);
-    }
+    const sent = await submit({ ...formState, ...(propertyTitle ? { property: propertyTitle } : {}) });
+    if (sent) setFormState(initialState);
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label htmlFor="name" className="block text-text-secondary text-sm mb-2">
-          Imię i nazwisko
-        </label>
-        <input
-          type="text"
-          id="name"
-          name="name"
-          value={formState.name}
+      <Field
+        id={`${fieldId}-name`}
+        label="Imię i nazwisko"
+        type="text"
+        name="name"
+        value={formState.name}
+        onChange={handleChange}
+        required
+        autoComplete="name"
+        placeholder="Jan Kowalski"
+      />
+
+      {/* Telefon wymagany — w nieruchomościach to najszybsza droga do umówienia prezentacji */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Field
+          id={`${fieldId}-phone`}
+          label="Telefon"
+          type="tel"
+          name="phone"
+          value={formState.phone}
           onChange={handleChange}
           required
-          className="w-full px-4 py-3 bg-white/5 border border-white/8 text-text-primary placeholder-text-secondary/50 focus:outline-none focus:border-accent/50 transition-colors"
-          placeholder="Jan Kowalski"
+          autoComplete="tel"
+          placeholder="np. 600 100 200"
         />
-      </div>
-
-      <div>
-        <label htmlFor="email" className="block text-text-secondary text-sm mb-2">
-          Adres e-mail
-        </label>
-        <input
+        <Field
+          id={`${fieldId}-email`}
+          label="E-mail (opcjonalnie)"
           type="email"
-          id="email"
           name="email"
           value={formState.email}
           onChange={handleChange}
-          required
-          className="w-full px-4 py-3 bg-white/5 border border-white/8 text-text-primary placeholder-text-secondary/50 focus:outline-none focus:border-accent/50 transition-colors"
+          autoComplete="email"
           placeholder="twoj@email.pl"
         />
       </div>
 
-      <div>
-        <label htmlFor="message" className="block text-text-secondary text-sm mb-2">
-          Wiadomość
-        </label>
-        <textarea
-          id="message"
-          name="message"
-          value={formState.message}
-          onChange={handleChange}
-          required
-          rows={4}
-          className="w-full px-4 py-3 bg-white/5 border border-white/8 text-text-primary placeholder-text-secondary/50 focus:outline-none focus:border-accent/50 transition-colors resize-none"
-          placeholder="Napisz, czym jesteś zainteresowany/a w tej nieruchomości..."
-        />
+      <Field
+        id={`${fieldId}-message`}
+        label="Wiadomość"
+        multiline
+        name="message"
+        value={formState.message}
+        onChange={handleChange}
+        required
+        rows={4}
+        placeholder="W czym mogę pomóc? Np. dogodny termin prezentacji"
+      />
+
+      <Button type="submit" disabled={isSubmitting} className="w-full">
+        {isSubmitting ? "Wysyłanie..." : propertyTitle ? "Umów prezentację" : "Wyślij wiadomość"}
+      </Button>
+
+      {/* TODO (Faza 4): zgoda RODO + link do polityki prywatności (wymaga strony i treści prawnej) */}
+
+      {/* Region aria-live istnieje stale — czytnik ekranu ogłosi zmianę komunikatu */}
+      <div aria-live="polite" className="text-small text-center">
+        {status === "success" && (
+          <p className="text-beige">
+            Dziękuję, wiadomość dotarła. Odezwę się zwykle tego samego dnia roboczego.
+          </p>
+        )}
+        {status === "error" && (
+          <p className="text-red-400">
+            Nie udało się wysłać wiadomości. Spróbuj ponownie albo zadzwoń: {siteConfig.phone.display}.
+          </p>
+        )}
       </div>
-
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="w-full px-6 py-3 border border-accent/50 text-accent font-light uppercase tracking-widest hover:bg-accent/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-      >
-        {isSubmitting ? "Wysyłanie..." : "Wyślij zapytanie"}
-      </button>
-
-      {submitStatus === "success" && (
-        <p className="text-accent text-sm text-center">
-          Dziękujemy! Wkrótce się odezwiemy.
-        </p>
-      )}
-      {submitStatus === "error" && (
-        <p className="text-red-400 text-sm text-center">
-          Coś poszło nie tak. Spróbuj ponownie.
-        </p>
-      )}
     </form>
   );
 }
