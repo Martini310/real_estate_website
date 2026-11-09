@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { initParallaxCard } from "@/lib/animations";
+import { initParallaxCard, startAnimation } from "@/lib/animations";
 import { PropertyCardData } from "@/types/property";
 import { formatArea, formatPrice, formatPricePerM2, formatPropertyType, formatRooms } from "@/lib/format";
 
@@ -21,10 +21,33 @@ interface PropertyCardProps {
 export default function PropertyCard({ property, priority = false }: PropertyCardProps) {
   const cardRef = useRef<HTMLAnchorElement>(null);
   const imageRef = useRef<HTMLDivElement>(null);
+  // Zdjęcie pobieramy dopiero, gdy karta zbliży się do ekranu (300 px), a nie
+  // z natywnym wyprzedzeniem Chrome (~1250 px+). Na telefonie 6 zdjęć kart spod
+  // hero (~265 KB) dzieliło łącze ze zdjęciem hero przed LCP. Karty `priority`
+  // (nad linią zgięcia na /oferty) ładują się od razu.
+  const [inView, setInView] = useState(priority);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    const card = cardRef.current;
+    if (inView || !card) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setInView(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "300px 0px" }
+    );
+    observer.observe(card);
+    return () => observer.disconnect();
+  }, [inView]);
 
   useEffect(() => {
     if (!cardRef.current || !imageRef.current) return;
-    return initParallaxCard(cardRef.current, imageRef.current);
+    const [card, image] = [cardRef.current, imageRef.current];
+    return startAnimation(() => initParallaxCard(card, image));
   }, []);
 
   const details = [
@@ -53,15 +76,19 @@ export default function PropertyCard({ property, priority = false }: PropertyCar
         >
           {/* Osobna warstwa na hover — zoom nie koliduje z transformacją parallaxu */}
           <div className="relative h-full w-full transition-transform duration-700 ease-out group-hover:scale-[1.04]">
-            <Image
-              src={property.image}
-              alt=""
-              fill
-              className="object-cover"
-              sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 600px"
-              preload={priority}
-              fetchPriority={priority ? "high" : undefined}
-            />
+            {inView && (
+              <Image
+                src={property.image}
+                alt=""
+                fill
+                // Miękkie pojawienie się po załadowaniu (karty priorytetowe — od razu widoczne)
+                className={`object-cover transition-opacity duration-500 ${priority || loaded ? "opacity-100" : "opacity-0"}`}
+                sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 600px"
+                preload={priority}
+                fetchPriority={priority ? "high" : undefined}
+                onLoad={() => setLoaded(true)}
+              />
+            )}
           </div>
         </div>
 

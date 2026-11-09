@@ -1,24 +1,31 @@
 import type { Metadata } from "next";
-import { Inter, Montserrat } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SkipLink from "@/components/ui/SkipLink";
 import AnalyticsEvents from "@/components/AnalyticsEvents";
 
-// Font interfejsu i treści. latin-ext → polskie znaki.
-const inter = Inter({
-  subsets: ["latin", "latin-ext"],
+// Czcionki hostowane lokalnie i przycięte do potrzebnych znaków (scripts/subset-fonts.mjs):
+// 64 KB zamiast 236 KB z pełnych podzbiorów latin + latin-ext — mniej bajtów
+// konkuruje na telefonie ze zdjęciem hero (LCP).
+
+// Inter — interfejs i treść: ASCII, Latin-1, polskie litery, typografia; grubości 300–500.
+const inter = localFont({
+  src: "./fonts/inter-pl.woff2",
+  weight: "300 500",
   variable: "--font-inter",
   display: "swap",
+  adjustFontFallback: "Arial",
 });
 
-// Font marki (logo/wordmark). latin-ext → poprawne polskie znaki (Ś, Ó, Ł).
-const montserrat = Montserrat({
-  subsets: ["latin", "latin-ext"],
-  weight: ["500", "600"],
+// Montserrat — font marki, wyłącznie wersalikami (logo, eyebrow); grubości 500–600.
+const montserrat = localFont({
+  src: "./fonts/montserrat-caps.woff2",
+  weight: "500 600",
   variable: "--font-montserrat",
   display: "swap",
+  adjustFontFallback: "Arial",
 });
 
 export const metadata: Metadata = {

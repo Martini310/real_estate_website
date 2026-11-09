@@ -439,3 +439,22 @@ Pozostałe sugestie Lighthouse (świadomie nie ruszane): ~47 KB „unused JS” 
 
 **Lokalnie:** `wordpress/docker-compose.yml` (WP 7.1 / PHP 8.3 + MariaDB, port 8088, usługa `wpcli`), dane logowania admina w `wordpress/.wp-admin.local` (poza repo), instrukcja `wordpress/README.md`.
 
+
+### Review — wydajność mobile po wdrożeniu (2026-11-09)
+PageSpeed (produkcja, mobile): **86** — LCP 3,8 s, SI 4,4 s; TBT 10 ms i CLS 0 już idealne. Problem: na wolnym 4G przed LCP walczyło o łącze ~570 KB (czcionki 236 KB, JS, zdjęcia kart spod hero) ze zdjęciem hero (48 KB).
+
+Pomiary: lokalny build produkcyjny, Lighthouse 12 mobile (symulacja jak PageSpeed), mediana 3 przebiegów:
+
+| Krok | Perf. | LCP | Uwagi |
+|---|---|---|---|
+| Stan wyjściowy | 84 | 4,53 s | czcionki 233 KB |
+| Czcionki przycięte (`app/fonts`, `next/font/local`) | 92 | 3,43 s | czcionki 64 KB |
+| GSAP ładowany dynamicznie po wyświetleniu | 93 | 3,21 s | parallax bez zmian |
+| ~~`experimental.inlineCss`~~ | 92 | 3,38 s | bez zysku, HTML 132 KB → **cofnięte** |
+| Zdjęcia kart dopiero 300 px przed ekranem + favicon 76 → 7 KB | **95** | **2,91 s** | przed LCP tylko hero + logo |
+
+- **Czcionki:** `scripts/subset-fonts.mjs` (Google Fonts `text=`) → `inter-pl.woff2` 44 KB (ASCII, Latin-1, polskie litery, typografia; 300–500), `montserrat-caps.woff2` 19 KB (tylko wersaliki — Montserrat występuje wyłącznie wielkimi literami; 500–600). Skrypt odtwarza pliki bit w bit. Sprawdzone: polskie znaki i „Ś” w logo renderują się czcionką docelową.
+- **GSAP:** `loadGsap()` + `startAnimation()` w `lib/animations.ts` (sprzątanie także, gdy komponent zniknie przed załadowaniem); strona główna nie importuje GSAP statycznie (panel/strona oferty — tak, ładują się osobno po kliknięciu).
+- **Zdjęcia kart:** `IntersectionObserver` (rootMargin 300 px) zamiast natywnego wyprzedzenia Chrome (~1250 px+), miękkie pojawienie się po załadowaniu; karty `priority` na `/oferty` bez zmian (preload + `fetchpriority=high`).
+- Hero na produkcji = AVIF 48 KB (Vercel kompresuje lepiej niż lokalny optymalizator, 72 KB) — jakość 80 zostaje.
+- Pozostałe ~190 KB JS to głównie framework Next/React — dalsze cięcie wymagałoby zmian architektury, nieproporcjonalnych do zysku.

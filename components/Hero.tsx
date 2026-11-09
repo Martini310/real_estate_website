@@ -2,15 +2,11 @@
 
 import { useEffect, useRef } from "react";
 import { getImageProps } from "next/image";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { initHeroParallax } from "@/lib/animations";
+import { initHeroParallax, startAnimation } from "@/lib/animations";
 import Container from "./ui/Container";
 import { ButtonLink } from "./ui/Button";
 import heroDesktop from "@/public/hero.jpg";
 import heroMobile from "@/public/hero-mobile.jpg";
-
-gsap.registerPlugin(ScrollTrigger);
 
 // Art direction przez <picture>: przeglądarka pobiera TYLKO kadr pasujący do
 // ekranu (poziomy ≥640 px, pionowy 9:16 poniżej). Bez `preload` — przy <picture>
@@ -38,7 +34,8 @@ export default function Hero() {
   useEffect(() => {
     if (!sectionRef.current || !imageRef.current) return;
 
-    return initHeroParallax(sectionRef.current, imageRef.current, contentRef.current);
+    const [section, image, content] = [sectionRef.current, imageRef.current, contentRef.current];
+    return startAnimation(() => initHeroParallax(section, image, content));
   }, []);
 
   return (

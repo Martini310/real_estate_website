@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { initReveal } from "@/lib/animations";
+import { initReveal, startAnimation } from "@/lib/animations";
 import { siteConfig } from "@/lib/site";
 import Container from "./ui/Container";
 
@@ -11,7 +11,8 @@ export default function Footer() {
   const footerRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    if (footerRef.current) return initReveal(footerRef.current);
+    const footer = footerRef.current;
+    if (footer) return startAnimation(() => initReveal(footer));
   }, []);
 
   const currentYear = new Date().getFullYear();

@@ -1,11 +1,9 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import PropertyCard from "./PropertyCard";
 import { PropertyCardData } from "@/types/property";
-import { initReveal, prefersReducedMotion } from "@/lib/animations";
+import { initReveal, loadGsap, prefersReducedMotion, startAnimation } from "@/lib/animations";
 import Container from "./ui/Container";
 
 interface PropertyGridProps {
@@ -20,7 +18,8 @@ export default function PropertyGrid({ properties, priorityCount = 0 }: Property
   const previousRef = useRef(properties);
 
   useEffect(() => {
-    if (gridRef.current) return initReveal(gridRef.current);
+    const grid = gridRef.current;
+    if (grid) return startAnimation(() => initReveal(grid));
   }, []);
 
   // Po zmianie filtrów (nie przy pierwszym renderze): przeliczenie pozycji
@@ -30,15 +29,16 @@ export default function PropertyGrid({ properties, priorityCount = 0 }: Property
     if (previousRef.current === properties || !gridRef.current) return;
     previousRef.current = properties;
 
-    ScrollTrigger.refresh();
     const cards = Array.from(gridRef.current.children);
-    if (cards.length === 0 || prefersReducedMotion()) return;
-
-    gsap.fromTo(
-      cards,
-      { opacity: 0, y: 20 },
-      { opacity: 1, y: 0, duration: 0.6, ease: "power2.out", stagger: 0.05 }
-    );
+    loadGsap().then(({ gsap, ScrollTrigger }) => {
+      ScrollTrigger.refresh();
+      if (cards.length === 0 || prefersReducedMotion()) return;
+      gsap.fromTo(
+        cards,
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.6, ease: "power2.out", stagger: 0.05 }
+      );
+    });
   }, [properties]);
 
   return (
