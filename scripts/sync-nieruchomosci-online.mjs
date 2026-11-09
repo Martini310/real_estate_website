@@ -1,6 +1,11 @@
 #!/usr/bin/env node
 // Import ofert agenta z nieruchomosci-online.pl → data/properties.json.
 //
+// Od Fazy 3 źródłem ofert na stronie jest WordPress (wtyczka peritus-core,
+// importer w PHP z tymi samymi regułami). Ten skrypt służy do odświeżenia pliku
+// awaryjnego `data/properties.json` (używany bez WORDPRESS_API_URL i przy buildzie,
+// gdy WP jest niedostępny). Zmiany w parserze wprowadzaj w obu miejscach.
+//
 // Portal nie ma publicznego API do odczytu, więc czytamy publiczne strony:
 // profil agenta (lista ofert + tytuły) i każde ogłoszenie (JSON-LD, galeria
 // `photos.x`, tabela „Szczegóły ogłoszenia”, pełny opis). Wynik mapujemy na

@@ -10,8 +10,8 @@ export const metadata: Metadata = {
     "Aktualne oferty mieszkań, domów i działek w Poznaniu i okolicach — z ceną, metrażem i ceną za m². Filtruj i umów prezentację.",
 };
 
-export default function OfertyPage() {
-  const properties = getPropertyCards();
+export default async function OfertyPage() {
+  const properties = await getPropertyCards();
 
   return (
     <main className="min-h-screen bg-background pt-28 md:pt-32 pb-24">

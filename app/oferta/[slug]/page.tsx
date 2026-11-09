@@ -3,10 +3,11 @@ import { notFound } from "next/navigation";
 import { getProperties, getPropertyBySlug } from "@/lib/properties";
 import PropertyDetailContent from "@/components/PropertyDetailContent";
 
-// Prerender wszystkich ofert (SSG). Po wpięciu WordPressa wystarczy, że
-// `getProperties()` zacznie zwracać dane z API — reszta bez zmian.
-export function generateStaticParams() {
-  return getProperties().map((property) => ({ slug: property.slug }));
+// Prerender wszystkich ofert przy buildzie (SSG). Oferty dodane później w WP
+// renderują się przy pierwszym wejściu (dynamicParams) i trafiają do cache.
+export async function generateStaticParams() {
+  const properties = await getProperties();
+  return properties.map((property) => ({ slug: property.slug }));
 }
 
 export async function generateMetadata({
@@ -15,7 +16,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const property = getPropertyBySlug(slug);
+  const property = await getPropertyBySlug(slug);
 
   if (!property) {
     return { title: "Nie znaleziono oferty" };
@@ -41,7 +42,7 @@ export default async function PropertyPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const property = getPropertyBySlug(slug);
+  const property = await getPropertyBySlug(slug);
 
   if (!property) notFound();
 

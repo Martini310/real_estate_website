@@ -10,8 +10,8 @@ import { formatOffers } from "@/lib/format";
 
 // Server Component: dane ofert czytane na serwerze; do przeglądarki trafiają
 // tylko pola kart (bez opisów i galerii) — patrz `getPropertyCards`.
-export default function Home() {
-  const properties = getPropertyCards();
+export default async function Home() {
+  const properties = await getPropertyCards();
 
   return (
     <main className="min-h-screen">

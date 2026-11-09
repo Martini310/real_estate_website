@@ -1,0 +1,60 @@
+# Lokalny WordPress do rozwoju i testów wtyczki peritus-core.
+#
+#   cd wordpress && docker compose up -d
+#   → panel:  http://localhost:8088/wp-admin   (instalacja przy pierwszym uruchomieniu)
+#   → API:    http://localhost:8088/wp-json/peritus/v1/offers
+#
+# Next.js lokalnie na danych z WP: w .env.local ustaw
+#   WORDPRESS_API_URL=http://localhost:8088
+#
+# Wtyczka jest montowana z repozytorium — zmiany w kodzie widać od razu.
+# Dane (baza, uploads) zostają w wolumenach; reset: docker compose down -v
+
+services:
+  db:
+    image: mariadb:11.4
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: wordpress
+      MARIADB_USER: wordpress
+      MARIADB_PASSWORD: wordpress-local-only
+      MARIADB_RANDOM_ROOT_PASSWORD: "1"
+    volumes:
+      - db:/var/lib/mysql
+
+  wordpress:
+    image: wordpress:7.1-php8.3-apache
+    restart: unless-stopped
+    depends_on:
+      - db
+    ports:
+      - "${WP_PORT:-8088}:80"
+    environment: &wp-env
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress-local-only
+      # Webhook do lokalnego Next (dev na porcie 3000). Sekret = REVALIDATE_SECRET z .env.local.
+      # (Obraz WP czyta tę zmienną w trakcie działania — dlatego wpcli dostaje te same zmienne.)
+      WORDPRESS_CONFIG_EXTRA: |
+        define('PERITUS_REVALIDATE_URL', 'http://host.docker.internal:3000/api/revalidate');
+        define('PERITUS_REVALIDATE_SECRET', 'local-dev-secret');
+    volumes:
+      - wp:/var/www/html
+      - ./peritus-core:/var/www/html/wp-content/plugins/peritus-core
+
+  # WP-CLI (tylko na żądanie):  docker compose run --rm wpcli wp plugin list
+  wpcli:
+    image: wordpress:cli-php8.3
+    profiles: ["tools"]
+    user: "33:33"
+    depends_on:
+      - db
+    environment: *wp-env
+    volumes:
+      - wp:/var/www/html
+      - ./peritus-core:/var/www/html/wp-content/plugins/peritus-core
+
+volumes:
+  db:
+  wp:

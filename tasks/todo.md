@@ -46,12 +46,22 @@ Cel: realne adresy, działająca nawigacja, podstrony.
 ## Faza 3 — Integracja z WordPress (headless)
 Cel: oferty z WP zamiast JSON. Warstwa UI bez zmian.
 
-- [ ] WP: custom post type „nieruchomosc” + pola ACF (cena, powierzchnia, pokoje, łazienki, piętra, lokalizacja/geo, galeria, agent, cechy, status)
-- [ ] Wystawić WPGraphQL (rekomendacja) lub REST; ustalić kontrakt pól
-- [ ] `lib/properties.ts` → `fetch` z WP z ISR (`revalidate`), zmienna `WORDPRESS_API_URL` w `.env`
-- [ ] Mapowanie pól WP → `types/property.ts`
-- [ ] `next.config.js` — dodać hostname mediów WP do `images.remotePatterns`
-- [ ] Obsługa błędów/timeoutów + fallback, cache
+**Decyzje właściciela (2026-10-10):**
+- Źródło ofert = **portal nieruchomosci-online.pl** (Damian dodaje tylko tam) → **WordPress sam importuje raz dziennie**; w WP: ukryj / wyróżnij ofertę (importer tych flag nie nadpisuje).
+- Next.js na **Vercelu**; WordPress na **TLD.pl** pod **cms.peritus-nieruchomosci.pl**.
+- Hosting TLD.pl: nginx + PHP, domena **bez własnego certyfikatu SSL** (zwraca `*.tld.pl`) → włączyć Let's Encrypt dla domeny i subdomeny `cms`.
+
+**Plan**
+- [x] Wtyczka `wordpress/peritus-core` (PHP ≥ 7.4, bez zależności od ACF/WPGraphQL):
+  - [x] CPT `peritus_offer` (panel, bez publicznych stron WP) + pola meta (źródło, cena, metraż, pokoje, łazienki, kondygnacje, rok, typ, lokalizacja, galeria, cechy) + ręczne flagi „Wyróżniona” / „Ukryta”
+  - [x] Importer = port `scripts/sync-nieruchomosci-online.mjs` do PHP: upsert po ID ogłoszenia; oferty zdjęte z portalu → szkic; błąd parsowania → przerwanie bez zmian
+  - [x] Harmonogram: WP-Cron raz dziennie + przycisk „Importuj teraz” + log ostatniego importu w panelu
+  - [x] REST `GET /wp-json/peritus/v1/offers` → dokładnie typ `Property` (jeden kontrakt, jedno zapytanie)
+  - [x] Po zmianie ofert → webhook do Next (`/api/revalidate`) z sekretem
+- [x] Next: `lib/properties.ts` asynchronicznie z WP (`WORDPRESS_API_URL`, cache + tag `offers`), walidacja odpowiedzi, **fallback na `data/properties.json`** przy braku/awarii WP; wszystkie wywołania `await`
+- [x] Next: `app/api/revalidate/route.ts` (sekret `REVALIDATE_SECRET`), `.env.example`
+- [x] Lokalnie: `wordpress/docker-compose.yml` (WordPress + MariaDB) → test importu i strony na danych z WP
+- [x] Instrukcja wdrożenia `tasks/wdrozenie.md`: TLD.pl (subdomena, SSL, WP, wtyczka, stałe w `wp-config.php`, prawdziwy cron), Vercel (projekt, zmienne, domena, DNS)
 
 ## Faza 4 — Funkcje portalu i zgodność prawna (RODO)
 - [ ] Działający formularz: API route (`/api/kontakt`) → e-mail (Resend/nodemailer) lub formularz WP; walidacja + honeypot/antyspam
@@ -400,4 +410,32 @@ Pozostałe sugestie Lighthouse (świadomie nie ruszane): ~47 KB „unused JS” 
 - 0 wystąpień „luksus/prestiż/nasz/nami/odpowiemy/dziękujemy” w kodzie UI.
 
 **Zostaje na Fazę 3–4:** WordPress (dane), RODO (zgoda + polityka + strony prawne → podlinkować w stopce), baner cookie + GTM/GA4, obraz OG + `metadataBase` (gdy będzie domena), sitemap/robots/JSON-LD, VoiceOver — test ręczny.
+
+### Review — Faza 3: WordPress headless (2026-10-10)
+**Architektura:** portal → (import 1×/dzień) → WordPress `cms.peritus-nieruchomosci.pl` (TLD.pl, wtyczka `peritus-core`) → `GET /wp-json/peritus/v1/offers` → Next.js na Vercelu (ISR, tag `offers`) ← webhook `/api/revalidate` po zmianach.
+
+**Wtyczka `wordpress/peritus-core`** (bez ACF/WPGraphQL; PHP ≥ 7.4):
+- Typ „Oferta” (tylko panel; dodaje wyłącznie importer), dane z portalu tylko do odczytu, przełączniki **Wyróżniona / Ukryta** (import ich nie rusza), kolumny listy.
+- Importer = port 1:1 skryptu Node (te same reguły i slugi). Najpierw parsuje wszystko, potem zapisuje (błąd → zero zmian); zdjęte z portalu → szkic; zmiany wykrywane hashem; ~1 s przerwy na ogłoszenie.
+- REST w kształcie `Property`: wyróżnione pierwsze, potem kolejność z profilu agenta; ukryte i szkice pominięte.
+- Webhook do Next ze wspólnym sekretem (stałe w `wp-config.php`), wstrzymany na czas importu, maks. 1 na żądanie.
+- Panel: Oferty → Import z portalu (wynik, „Importuj teraz”, następny import, ostatnie odświeżenie strony, adres API).
+
+**Next.js:** `lib/properties.ts` asynchronicznie z WP (`WORDPRESS_API_URL`), walidacja kształtu, przy buildzie awaria WP → `data/properties.json`; w działaniu błąd → Next serwuje ostatnią dobrą wersję. `app/api/revalidate` (sekret, `revalidateTag("offers", "max")`), `app/error.tsx` (strona błędu w stylu serwisu z telefonem), `.env.example`.
+
+**Weryfikacja (lokalny WP w Dockerze + build produkcyjny Next)**
+- Import realnych ofert: 8 utworzonych w 14 s; **API identyczne z `data/properties.json` pole po polu** (id, slugi, ceny, opisy, cechy, galerie, kolejność) — jedyna różnica `featured` (teraz ręczny przełącznik zamiast „2 najnowsze”).
+- Ponowny import: 8 „bez zmian”, bez zbędnego webhooka. Symulacja zdjęcia 2 ofert z portalu → szkice (API 5), pełny import → przywrócone; flaga „Ukryta” przetrwała.
+- Przełączniki w WP → webhook 200 → strona: ukryta oferta znika z listy i jej adres daje 404, odkryta wraca (200); wyróżniona wskakuje na pierwsze miejsce. Zły sekret → 401.
+- **Błąd złapany testem:** `revalidateTag(..., { expire: 0 })` przy niedostępnym WP dawał 500 (pusty cache) → zmienione na `"max"` (stale-while-revalidate): przy wyłączonym WP strona i oferty dalej HTTP 200 na ostatniej dobrej wersji; po powrocie WP zmiany docierają.
+- Build z wyłączonym WP (czysty cache): sukces, ostrzeżenie w logu, 8 ofert z JSON.
+- Panel WP 7.1.3 / PHP 8.3: lista ofert, edycja (przełączniki + dane tylko do odczytu), strona importu i przycisk „Importuj teraz”; składnia wtyczki sprawdzona pod PHP 7.4.
+
+**Ważne przy wdrożeniu (szczegóły: `tasks/wdrozenie.md`)**
+- 🔴 **MX domeny wskazuje na samą domenę** → przed przełączeniem domeny na Vercel zmienić MX na `mail.peritus-nieruchomosci.pl`, inaczej przestanie działać poczta `@peritus-nieruchomosci.pl`.
+- Domena bez własnego SSL (zwraca `*.tld.pl`) → Let's Encrypt dla `cms`; domenie głównej certyfikat wystawi Vercel.
+- WP-Cron → prawdziwy cron w panelu TLD.pl (`DISABLE_WP_CRON` + wywołanie `wp-cron.php` co 15 min).
+- Vercel Pro (użytek komercyjny); zmienne `WORDPRESS_API_URL`, `REVALIDATE_SECRET`.
+
+**Lokalnie:** `wordpress/docker-compose.yml` (WP 7.1 / PHP 8.3 + MariaDB, port 8088, usługa `wpcli`), dane logowania admina w `wordpress/.wp-admin.local` (poza repo), instrukcja `wordpress/README.md`.
 
