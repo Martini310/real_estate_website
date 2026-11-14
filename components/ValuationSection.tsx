@@ -5,6 +5,7 @@ import Container from "./ui/Container";
 import SectionHeading from "./ui/SectionHeading";
 import Field from "./ui/Field";
 import Button from "./ui/Button";
+import Honeypot from "./ui/Honeypot";
 import { useLeadSubmit } from "@/lib/useLeadSubmit";
 import { siteConfig } from "@/lib/site";
 
@@ -24,9 +25,9 @@ export default function ValuationSection() {
   const [form, setForm] = useState({ location: "", phone: "" });
   const { status, isSubmitting, submit } = useLeadSubmit("wycena");
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (await submit(form)) setForm({ location: "", phone: "" });
+    if (await submit(form, e.currentTarget)) setForm({ location: "", phone: "" });
   };
 
   return (
@@ -51,7 +52,8 @@ export default function ValuationSection() {
             </ul>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4 md:self-center">
+          <form onSubmit={handleSubmit} className="relative space-y-4 md:self-center">
+            <Honeypot />
             <Field
               id={`${id}-location`}
               label="Gdzie jest nieruchomość?"

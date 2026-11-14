@@ -5,6 +5,7 @@ import { useLeadSubmit } from "@/lib/useLeadSubmit";
 import { siteConfig } from "@/lib/site";
 import Button from "./ui/Button";
 import Field from "./ui/Field";
+import Honeypot from "./ui/Honeypot";
 
 interface ContactFormProps {
   /** Tytuł oferty, której dotyczy zapytanie. Pominięty na ogólnej stronie kontaktu. */
@@ -30,14 +31,16 @@ export default function ContactForm({ propertyTitle }: ContactFormProps) {
     setFormState((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const sent = await submit({ ...formState, ...(propertyTitle ? { property: propertyTitle } : {}) });
+    const sent = await submit({ ...formState, ...(propertyTitle ? { property: propertyTitle } : {}) }, e.currentTarget);
     if (sent) setFormState(initialState);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="relative space-y-4">
+      <Honeypot />
+
       <Field
         id={`${fieldId}-name`}
         label="Imię i nazwisko"

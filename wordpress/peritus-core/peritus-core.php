@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: Peritus Core
- * Description: Oferty Peritus Nieruchomości dla strony Next.js (headless): codzienny import z nieruchomosci-online.pl, REST API i odświeżanie strony.
- * Version: 1.0.0
+ * Description: Oferty i zgłoszenia Peritus Nieruchomości dla strony Next.js (headless): codzienny import z nieruchomosci-online.pl, REST API, odświeżanie strony i formularze kontaktowe.
+ * Version: 1.1.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Author: Peritus Nieruchomości
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('PERITUS_CORE_VERSION', '1.0.0');
+define('PERITUS_CORE_VERSION', '1.1.0');
 define('PERITUS_CORE_DIR', plugin_dir_path(__FILE__));
 
 require_once PERITUS_CORE_DIR . 'includes/class-offers.php';
@@ -21,11 +21,13 @@ require_once PERITUS_CORE_DIR . 'includes/class-importer.php';
 require_once PERITUS_CORE_DIR . 'includes/class-rest.php';
 require_once PERITUS_CORE_DIR . 'includes/class-revalidate.php';
 require_once PERITUS_CORE_DIR . 'includes/class-admin.php';
+require_once PERITUS_CORE_DIR . 'includes/class-leads.php';
 
 Peritus_Offers::init();
 Peritus_Rest::init();
 Peritus_Revalidate::init();
 Peritus_Admin::init();
+Peritus_Leads::init();
 
 // Codzienny import z portalu (WP-Cron). Na hostingu warto podpiąć prawdziwy cron
 // wywołujący wp-cron.php — patrz tasks/wdrozenie.md.

@@ -458,3 +458,14 @@ Pomiary: lokalny build produkcyjny, Lighthouse 12 mobile (symulacja jak PageSpee
 - **Zdjęcia kart:** `IntersectionObserver` (rootMargin 300 px) zamiast natywnego wyprzedzenia Chrome (~1250 px+), miękkie pojawienie się po załadowaniu; karty `priority` na `/oferty` bez zmian (preload + `fetchpriority=high`).
 - Hero na produkcji = AVIF 48 KB (Vercel kompresuje lepiej niż lokalny optymalizator, 72 KB) — jakość 80 zostaje.
 - Pozostałe ~190 KB JS to głównie framework Next/React — dalsze cięcie wymagałoby zmian architektury, nieproporcjonalnych do zysku.
+
+### Review — formularze przez WordPress (2026-11-14)
+
+- **Przepływ**: formularz → `useLeadSubmit` → Next `app/api/lead/route.ts` (walidacja, honeypot `website`, IP klienta) → `POST /wp-json/peritus/v1/leads` z nagłówkiem `x-peritus-secret` (ten sam wspólny sekret co webhook — bez nowych zmiennych) → `Peritus_Leads`: zapis jako „Zgłoszenie” **przed** wysyłką maila → `wp_mail` na adresy z **Zgłoszenia → Ustawienia** (domyślnie martin@…, kilka po przecinku, walidacja + komunikat o pominiętych), `Reply-To` = klient, nadawca `noreply@peritus-nieruchomosci.pl`.
+- Ochrona: sekret (`hash_equals`), honeypot (bot dostaje „ok”, nic nie trafia do WP), limit 5 zgłoszeń / 10 min z IP, sanitizacja i limity długości po obu stronach, `create_posts: do_not_allow` (zgłoszeń nie da się dodać ręcznie).
+- Panel: lista (telefon, oferta/lokalizacja, „E-mail do biura: Wysłany / Nie wysłany”), podgląd z klikalnym `tel:`/`mailto:`.
+- `track("submit_lead")` tylko po faktycznym sukcesie.
+
+**Weryfikacja**: PHP lint 7.4 + 8.3; `tsc` 0; `next build` OK (`/api/lead` ƒ); lokalny WP (docker, `pre_wp_mail` → plik): 401 bez sekretu, 400 zły telefon / źródło, 200 + mail (temat z ofertą, Reply-To, From), 429 po 5 zgłoszeniach z IP, 2 odbiorców po zmianie ustawień; przeglądarka: wycena (strona główna) i `/kontakt` → komunikat sukcesu, reset pól, zgłoszenie w panelu; honeypot → 200 bez zapisu; WP wyłączony → 502 → komunikat błędu z telefonem; brak poziomego przewijania; Tab omija pułapkę.
+
+**Otwarte**: klauzula informacyjna RODO pod formularzami + polityka prywatności (teraz dane realnie trafiają do WP — treść do akceptacji właściciela); jeśli poczta z PHP będzie gubiona → WP Mail SMTP.

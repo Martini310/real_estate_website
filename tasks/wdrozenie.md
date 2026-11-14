@@ -58,7 +58,8 @@ SPF (`v=spf1 a mx include:spf.tld.pl -all`) może zostać — `include:spf.tld.p
 7. **Cron w panelu TLD.pl**: co 15 minut wywołanie
    `https://cms.peritus-nieruchomosci.pl/wp-cron.php?doing_wp_cron`
    (np. `wget -q -O /dev/null "https://cms.peritus-nieruchomosci.pl/wp-cron.php?doing_wp_cron"`). WordPress sam pilnuje, żeby import szedł raz dziennie.
-8. **Oferty → Import z portalu → Importuj teraz**. Wynik „Udany”, potem otwórz w przeglądarce
+8. **Zgłoszenia → Ustawienia** — adres(y), na które idą zgłoszenia z formularzy (domyślnie `martin@peritus-nieruchomosci.pl`, kilka adresów po przecinku). Zmiana działa od razu, bez wdrażania strony. Formularze wymagają `PERITUS_REVALIDATE_SECRET` z punktu 6 — bez niego WordPress odrzuca zgłoszenia (strona pokazuje komunikat błędu z numerem telefonu).
+9. **Oferty → Import z portalu → Importuj teraz**. Wynik „Udany”, potem otwórz w przeglądarce
    `https://cms.peritus-nieruchomosci.pl/wp-json/peritus/v1/offers` — powinna być lista ofert.
 
 ## 3. Vercel — projekt Next.js
@@ -88,10 +89,13 @@ Dopiero po kroku 0 (poczta) i 3 (działający deploy).
 - [ ] WP → Oferta → zaznacz **Ukryta** → Aktualizuj → po chwili oferta znika ze strony (Oferty → Import z portalu → „Odświeżanie strony … odpowiedź: 200”).
 - [ ] Odznacz **Ukryta** → oferta wraca.
 - [ ] Mail testowy na `damian@peritus-nieruchomosci.pl` dochodzi.
+- [ ] Formularz wyceny na stronie → komunikat „Dziękuję!”, zgłoszenie widać w WP → **Zgłoszenia** (kolumna „E-mail do biura: Wysłany”), mail dochodzi na adres z ustawień (sprawdź też SPAM).
 - [ ] Następnego dnia: Oferty → Import z portalu → „Ostatni import (cron)” z dzisiejszą datą.
 
 ## Jak to działa w razie problemów
 
+- **Mail ze zgłoszeniem nie dochodzi** → zgłoszenie i tak jest w WP → Zgłoszenia (zapis idzie przed wysyłką). Nadawca to `noreply@peritus-nieruchomosci.pl`; jeśli serwer gubi pocztę z PHP albo ląduje w SPAM, zainstaluj wtyczkę **WP Mail SMTP** i skonfiguruj wysyłkę przez skrzynkę na `mail.peritus-nieruchomosci.pl` (SMTP, port 465/SSL).
+- **Formularz pokazuje błąd** → sprawdź, czy `PERITUS_REVALIDATE_SECRET` w `wp-config.php` = `REVALIDATE_SECRET` na Vercelu (Vercel → Logs: wpis `[lead]`).
 - **Webhook nie dotrze** → strona i tak odświeża oferty co godzinę.
 - **WordPress chwilowo nie działa** → strona dalej pokazuje ostatnią poprawną wersję ofert (sprawdzone na buildzie produkcyjnym); nowy deploy w tym czasie użyje `data/properties.json` z repozytorium.
 - **Portal zmieni szablon** → import przerywa się bez zmian w ofertach, błąd widać w Oferty → Import z portalu. Wtedy trzeba poprawić parser w `wordpress/peritus-core/includes/class-importer.php`.
