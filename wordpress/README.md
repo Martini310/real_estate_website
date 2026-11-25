@@ -1,6 +1,6 @@
 # WordPress (headless) — wtyczka `peritus-core`
 
-WordPress jest wyłącznie zapleczem: importuje oferty z nieruchomosci-online.pl,
+WordPress jest wyłącznie zapleczem: importuje oferty z nieruchomosci-online.pl i Otodom,
 udostępnia je stronie Next.js i przyjmuje zgłoszenia z formularzy. Publiczną stroną jest aplikacja Next.js.
 
 ## Co robi wtyczka
@@ -9,14 +9,23 @@ udostępnia je stronie Next.js i przyjmuje zgłoszenia z formularzy. Publiczną 
 |---|---|
 | `peritus-core.php` | rejestracja, harmonogram (WP-Cron raz dziennie) |
 | `includes/class-offers.php` | typ treści „Oferta”, pola, przełączniki „Wyróżniona” / „Ukryta”, kolumny listy |
-| `includes/class-importer.php` | import z portalu (port `scripts/sync-nieruchomosci-online.mjs`, te same slugi) |
+| `includes/class-importer.php` | import z nieruchomosci-online.pl (port `scripts/sync-nieruchomosci-online.mjs`, te same slugi) + łączenie z Otodom i zapis |
+| `includes/class-otodom.php` | oferty biura z Otodom (`__NEXT_DATA__`, słownik kodów → polskie nazwy) |
 | `includes/class-rest.php` | `GET /wp-json/peritus/v1/offers` w kształcie `types/property.ts` |
 | `includes/class-revalidate.php` | webhook do Next (`/api/revalidate`) po zmianach |
-| `includes/class-admin.php` | Oferty → Import z portalu (wynik, „Importuj teraz”, harmonogram) |
+| `includes/class-admin.php` | Oferty → Import z portali (wynik, „Importuj teraz”, harmonogram) |
 | `includes/class-leads.php` | `POST /wp-json/peritus/v1/leads` (formularze ze strony): zapis w „Zgłoszenia”, e-mail na adresy z Zgłoszenia → Ustawienia, limit 5 zgłoszeń / 10 min z jednego IP |
 
 Zasady: importer najpierw pobiera i parsuje **wszystkie** ogłoszenia, dopiero potem
 zapisuje (błąd = brak zmian). Oferty zdjęte z portalu trafiają do szkiców.
+
+Otodom jest źródłem dodatkowym: jego błąd (np. blokada botów) trafia do logu importu, oferty
+z nieruchomosci-online.pl importują się normalnie, a oferty z Otodom zostają bez zmian.
+Duplikat (ta sama oferta na obu portalach) = ten sam typ, pokoje, metraż co do 0,01 m², piętro
+(gdy znane po obu stronach) i pinezki ≤ 500 m od siebie — na stronie zostaje wersja
+z nieruchomosci-online.pl z zapamiętanym linkiem do Otodom; różnica cen widać w logu importu.
+Cena nie jest kryterium. Profil biura na Otodom odczytujemy z dwóch sortowań (6 + 6) —
+przy więcej niż 12 ofertach import Otodom zgłosi błąd i trzeba go rozbudować.
 Przełączniki „Wyróżniona” i „Ukryta” należą do właściciela — import ich nie zmienia.
 
 Formularze: przeglądarka → Next `/api/lead` (walidacja, honeypot) → WP z nagłówkiem

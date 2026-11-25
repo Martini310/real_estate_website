@@ -2,8 +2,9 @@
 /**
  * Typ treści „Oferta” (peritus_offer) i jej pola.
  *
- * Pola importowane z portalu są tylko do odczytu w panelu — importer nadpisuje je
- * przy każdym uruchomieniu (źródłem prawdy jest nieruchomosci-online.pl).
+ * Pola importowane z portali są tylko do odczytu w panelu — importer nadpisuje je
+ * przy każdym uruchomieniu (źródłem prawdy jest nieruchomosci-online.pl, a dla ofert
+ * wystawionych tylko tam — Otodom).
  * Ręczne flagi „Wyróżniona” i „Ukryta” należą do właściciela i importer ich nie rusza.
  */
 
@@ -18,7 +19,9 @@ class Peritus_Offers
     /** Klucze meta (z podkreślnikiem — ukryte w natywnym panelu „Własne pola”). */
     const META = array(
         'source_id'  => '_peritus_source_id',
+        'source'     => '_peritus_source',     // no | otodom (brak = no — oferty sprzed importu z Otodom)
         'source_url' => '_peritus_source_url',
+        'otodom_url' => '_peritus_otodom_url', // ta sama oferta na Otodom (duplikat połączony przy imporcie)
         'location'   => '_peritus_location',
         'price'      => '_peritus_price',
         'area'       => '_peritus_area',
@@ -32,6 +35,11 @@ class Peritus_Offers
         'hash'       => '_peritus_hash',
         'featured'   => '_peritus_featured',
         'hidden'     => '_peritus_hidden',
+    );
+
+    const SOURCES = array(
+        'no'     => 'nieruchomosci-online.pl',
+        'otodom' => 'Otodom',
     );
 
     const TYPES = array(
@@ -60,7 +68,7 @@ class Peritus_Offers
                 'all_items'     => 'Wszystkie oferty',
                 'edit_item'     => 'Oferta',
                 'search_items'  => 'Szukaj ofert',
-                'not_found'     => 'Brak ofert — uruchom import (Oferty → Import z portalu).',
+                'not_found'     => 'Brak ofert — uruchom import (Oferty → Import z portali).',
             ),
             // Strona publiczna to Next.js — WordPress nie renderuje ofert sam.
             'public'          => false,
@@ -82,18 +90,41 @@ class Peritus_Offers
         return get_post_meta($post_id, self::META[$key], true);
     }
 
-    /** ID wpisu WP dla ID ogłoszenia z portalu (dowolny status), albo 0. */
-    public static function find_by_source_id($source_id)
+    /** Źródło oferty: no | otodom. */
+    public static function get_source($post_id)
     {
+        return self::get_meta($post_id, 'source') === 'otodom' ? 'otodom' : 'no';
+    }
+
+    /** ID wpisu WP dla ID ogłoszenia z danego portalu (dowolny status), albo 0. */
+    public static function find_by_source_id($source_id, $source)
+    {
+        $source_query = array('key' => self::META['source'], 'value' => $source);
+        if ($source === 'no') {
+            $source_query = array(
+                'relation' => 'OR',
+                $source_query,
+                array('key' => self::META['source'], 'compare' => 'NOT EXISTS'),
+            );
+        }
         $posts = get_posts(array(
             'post_type'      => self::POST_TYPE,
             'post_status'    => 'any',
-            'meta_key'       => self::META['source_id'],
-            'meta_value'     => (string) $source_id,
             'fields'         => 'ids',
             'posts_per_page' => 1,
+            'meta_query'     => array(
+                array('key' => self::META['source_id'], 'value' => (string) $source_id),
+                $source_query,
+            ),
         ));
         return $posts ? (int) $posts[0] : 0;
+    }
+
+    /** „nieruchomosci-online.pl”, „Otodom” albo „nieruchomosci-online.pl + Otodom”. */
+    public static function source_label($post_id)
+    {
+        $label = self::SOURCES[self::get_source($post_id)];
+        return self::get_meta($post_id, 'otodom_url') ? $label . ' + Otodom' : $label;
     }
 
     // --- panel ---------------------------------------------------------------
@@ -129,9 +160,11 @@ class Peritus_Offers
     public static function render_details_box($post)
     {
         $url     = self::get_meta($post->ID, 'source_url');
+        $otodom  = self::get_meta($post->ID, 'otodom_url');
         $type    = self::get_meta($post->ID, 'type');
         $gallery = json_decode((string) self::get_meta($post->ID, 'gallery'), true);
         $rows    = array(
+            'Źródło'       => self::source_label($post->ID),
             'Typ'          => isset(self::TYPES[$type]) ? self::TYPES[$type] : $type,
             'Lokalizacja'  => self::get_meta($post->ID, 'location'),
             'Cena'         => number_format((float) self::get_meta($post->ID, 'price'), 0, ',', ' ') . ' zł',
@@ -139,14 +172,18 @@ class Peritus_Offers
             'Pokoje'       => self::get_meta($post->ID, 'bedrooms'),
             'Zdjęcia'      => is_array($gallery) ? count($gallery) : 0,
         );
-        echo '<p class="description">Treść oferty zmieniasz na nieruchomosci-online.pl — import nadpisuje te dane raz dziennie.</p>';
+        printf('<p class="description">Treść oferty zmieniasz na %s — import nadpisuje te dane raz dziennie.</p>', esc_html(self::SOURCES[self::get_source($post->ID)]));
         echo '<table class="widefat striped"><tbody>';
         foreach ($rows as $label => $value) {
             printf('<tr><th style="width:140px">%s</th><td>%s</td></tr>', esc_html($label), esc_html((string) $value));
         }
         echo '</tbody></table>';
         if ($url) {
-            printf('<p><a href="%s" target="_blank" rel="noopener">Zobacz ogłoszenie na portalu ↗</a></p>', esc_url($url));
+            printf('<p><a href="%s" target="_blank" rel="noopener">Zobacz ogłoszenie na %s ↗</a></p>', esc_url($url), esc_html(self::SOURCES[self::get_source($post->ID)]));
+        }
+        if ($otodom) {
+            printf('<p><a href="%s" target="_blank" rel="noopener">Ta sama oferta na Otodom ↗</a></p>', esc_url($otodom));
+            echo '<p class="description">Wykryta jako duplikat — na stronie pokazujemy ją raz. Jeśli to jednak inny lokal, zgłoś to administratorowi strony — reguła łączenia wymaga wtedy poprawki.</p>';
         }
     }
 
@@ -170,6 +207,7 @@ class Peritus_Offers
             'title'            => 'Oferta',
             'peritus_price'    => 'Cena',
             'peritus_location' => 'Lokalizacja',
+            'peritus_source'   => 'Źródło',
             'peritus_flags'    => 'Na stronie',
             'date'             => $columns['date'],
         );
@@ -181,6 +219,8 @@ class Peritus_Offers
             echo esc_html(number_format((float) self::get_meta($post_id, 'price'), 0, ',', ' ') . ' zł');
         } elseif ($column === 'peritus_location') {
             echo esc_html((string) self::get_meta($post_id, 'location'));
+        } elseif ($column === 'peritus_source') {
+            echo esc_html(self::source_label($post_id));
         } elseif ($column === 'peritus_flags') {
             if (get_post_status($post_id) !== 'publish') {
                 echo 'Zdjęta z portalu';

@@ -469,3 +469,32 @@ Pomiary: lokalny build produkcyjny, Lighthouse 12 mobile (symulacja jak PageSpee
 **Weryfikacja**: PHP lint 7.4 + 8.3; `tsc` 0; `next build` OK (`/api/lead` ƒ); lokalny WP (docker, `pre_wp_mail` → plik): 401 bez sekretu, 400 zły telefon / źródło, 200 + mail (temat z ofertą, Reply-To, From), 429 po 5 zgłoszeniach z IP, 2 odbiorców po zmianie ustawień; przeglądarka: wycena (strona główna) i `/kontakt` → komunikat sukcesu, reset pól, zgłoszenie w panelu; honeypot → 200 bez zapisu; WP wyłączony → 502 → komunikat błędu z telefonem; brak poziomego przewijania; Tab omija pułapkę.
 
 **Otwarte**: klauzula informacyjna RODO pod formularzami + polityka prywatności (teraz dane realnie trafiają do WP — treść do akceptacji właściciela); jeśli poczta z PHP będzie gubiona → WP Mail SMTP.
+
+## Otodom jako drugie źródło ofert + wykrywanie duplikatów ✅ ZROBIONE (2026-11-25)
+
+Kontekst: Damian część ofert wystawia tylko na Otodom (profil biura „PERITUS”: otodom.pl/pl/firmy/biura-nieruchomosci/peritus-ID11540480). Import z nieruchomosci-online.pl (NO) działa już w WP (`class-importer.php`, WP-Cron raz dziennie + cron na TLD.pl co 15 min wg `tasks/wdrozenie.md`).
+
+Rozpoznanie (stan 25.11): NO = 9 ofert, Otodom = 8. Otodom podaje dane jako JSON (`__NEXT_DATA__`): cena, metraż, pokoje, piętro, współrzędne, opis HTML, 19+ zdjęć (`ireland.apollo.olxcdn.com`). Profil biura pokazuje max 6 ofert i nie stronicuje przez URL → pełna lista = suma sortowań „najnowsze” + „najstarsze” (wystarcza do 12 ofert).
+Dopasowanie: 4 pewne duplikaty (Łokietka, Tysiąclecia, Koziegłowy, działka Ostródzka): ten sam typ, metraż co do 0,01 m², pokoje, cena; współrzędne różnią się o 15–301 m. **Pułapka: Koninko** — ten sam opis i budynek, ale inne piętro (1 vs 2), metraż (55,61 vs 55,63) i cena → to dwa RÓŻNE lokale. Tylko na Otodom: Strzeszyn 2 pok. 41,86 m², os. Powstańców Warszawy 54,5 m², ul. Wierzbięcice 40,08 m².
+
+- [x] `class-importer.php` + nowy `class-otodom.php`: drugie źródło Otodom (lista z 2 sortowań → strona każdej oferty → `to_property` w kształcie `Property`); wspólna zasada „najpierw pobierz i sparsuj WSZYSTKO z obu portali, potem zapisz”
+- [x] Reguła duplikatu: ten sam typ + |Δ metrażu| ≤ ~~0,05~~ **0,01** m² (0,05 skleiłoby Koninko: Δ 0,02) + te same pokoje + to samo piętro (mieszkania) + odległość ≤ 500 m. Cena NIE jest kluczem (może się rozjechać), ale różnica ceny trafia do logu importu
+- [x] Duplikat → zostaje oferta z NO (bogatsze szczegóły), link do Otodom zapisany jako dodatkowe źródło; brak dopasowania → osobna oferta z Otodom
+- [x] Meta `source` (`no` / `otodom`; brak = `no`) + wyszukiwanie po parze (źródło, ID) — ~~prefiks w `source_id`~~ (bez migracji istniejących ofert, `id` w API zostaje liczbą); slugi ofert z NO bez zmian (SEO)
+- [x] Tytuł ofert z Otodom: krótki, generowany jak na NO („Mieszkanie 2-pokojowe, Strzeszyn”) zamiast marketingowego „2 pokoje z ogródkiem | … | 0% PCC”
+- [x] Panel WP: kolumna „Źródło” (NO / Otodom / NO + Otodom), w logu importu lista połączonych par; błędne łączenie/niełączenie naprawia się przełącznikiem „Ukryta” (już istnieje)
+- [x] Awaria Otodom nie blokuje importu z NO (Otodom opcjonalny: błąd → log + oferty z Otodom bez zmian)
+- [x] `next.config.js`: `ireland.apollo.olxcdn.com` w `remotePatterns`
+- [x] Test na lokalnym WP (docker) — patrz review (wyszło 13, nie 12: plan liczył Koninko podwójnie)
+
+Ryzyka do decyzji właściciela: Otodom (Grupa OLX) chroni się przed botami (DataDome / AWS WAF w ciasteczkach) — z komputera działa, z serwera TLD.pl może być blokowane; regulamin Otodom zabrania automatycznego pobierania treści.
+
+### Review — Otodom (2026-11-25)
+
+- **Import na lokalnym WP** (8 starszych ofert bez pola `source` = test migracji): NO 9 + Otodom 8 → **13 opublikowanych**; połączone 4 pary (Łokietka, Tysiąclecia, Koziegłowy, działka Ostródzka — ceny zgodne); tylko Otodom: Strzeszyn, os. Powstańców Warszawy, ul. Wierzbięcice **i drugi lokal w Koninku** (piętro 2, 55,63 m², 473 040 zł) — osobno od lokalu z NO (piętro 1, 55,61 m²). Flaga „Wyróżniona” przetrwała, 3 oferty zdjęte z NO → szkice.
+- **Drugi import**: 13 × „bez zmian” (idempotentny).
+- **Symulowana blokada Otodom** (`pre_http_request` → 403): import NO udany, Otodom „Błąd: 403…”, nadal 13 opublikowanych, linki do Otodom przy duplikatach zachowane.
+- **Panel**: strona „Import z portali” z wierszem Otodom i listą par (różnica cen pogrubiona — sprawdzone na danych testowych), kolumna „Źródło”, w szczegółach link „Ta sama oferta na Otodom”.
+- **Next** na lokalnym WP: 13 kart, zdjęcia z `ireland.apollo.olxcdn.com` przez `next/image`, strona oferty z Otodom (16 zdjęć, opis, parametry; łazienki ukryte — Otodom ich nie podaje). `tsc` 0, `next build` OK. PHP lint 7.4 + 8.3.
+- **Poza zakresem**: `scripts/sync-nieruchomosci-online.mjs` (plik awaryjny `data/properties.json`) nadal tylko NO — awaryjnie strona pokaże oferty bez tych tylko z Otodom. W konsoli `/oferty` jest błąd hydratacji `useId` w `FilterBar` (istniał wcześniej, niezwiązany z importem).
+- **Do sprawdzenia po wdrożeniu**: czy Otodom nie blokuje serwera TLD.pl (wiersz „Otodom” w Import z portali).

@@ -15,6 +15,11 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'i.st-nieruchomosci-online.pl',
       },
+      {
+        // Zdjęcia ofert wystawionych tylko na Otodom (wtyczka WP, class-otodom.php)
+        protocol: 'https',
+        hostname: 'ireland.apollo.olxcdn.com',
+      },
     ],
   },
 }
