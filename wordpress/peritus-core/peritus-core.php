@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: Peritus Core
- * Description: Oferty i zgłoszenia Peritus Nieruchomości dla strony Next.js (headless): codzienny import z nieruchomosci-online.pl, REST API, odświeżanie strony i formularze kontaktowe.
- * Version: 1.1.0
+ * Description: Oferty i zgłoszenia Peritus Nieruchomości dla strony Next.js (headless): codzienny import z nieruchomosci-online.pl i Otodom (z wykrywaniem duplikatów), REST API, odświeżanie strony i formularze kontaktowe.
+ * Version: 1.2.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Author: Peritus Nieruchomości
@@ -13,11 +13,12 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('PERITUS_CORE_VERSION', '1.1.0');
+define('PERITUS_CORE_VERSION', '1.2.0');
 define('PERITUS_CORE_DIR', plugin_dir_path(__FILE__));
 
 require_once PERITUS_CORE_DIR . 'includes/class-offers.php';
 require_once PERITUS_CORE_DIR . 'includes/class-importer.php';
+require_once PERITUS_CORE_DIR . 'includes/class-otodom.php';
 require_once PERITUS_CORE_DIR . 'includes/class-rest.php';
 require_once PERITUS_CORE_DIR . 'includes/class-revalidate.php';
 require_once PERITUS_CORE_DIR . 'includes/class-admin.php';
@@ -29,7 +30,7 @@ Peritus_Revalidate::init();
 Peritus_Admin::init();
 Peritus_Leads::init();
 
-// Codzienny import z portalu (WP-Cron). Na hostingu warto podpiąć prawdziwy cron
+// Codzienny import z portali (WP-Cron). Na hostingu warto podpiąć prawdziwy cron
 // wywołujący wp-cron.php — patrz tasks/wdrozenie.md.
 add_action(Peritus_Importer::CRON_HOOK, array('Peritus_Importer', 'run_scheduled'));
 

@@ -1,6 +1,6 @@
 <?php
 /**
- * Oferty → Import z portalu: wynik ostatniego importu, przycisk „Importuj teraz”,
+ * Oferty → Import z portali: wynik ostatniego importu, przycisk „Importuj teraz”,
  * stan harmonogramu i ostatnie odświeżenie strony.
  */
 
@@ -22,8 +22,8 @@ class Peritus_Admin
     {
         add_submenu_page(
             'edit.php?post_type=' . Peritus_Offers::POST_TYPE,
-            'Import z portalu',
-            'Import z portalu',
+            'Import z portali',
+            'Import z portali',
             'manage_options',
             self::PAGE,
             array(__CLASS__, 'render')
@@ -46,6 +46,31 @@ class Peritus_Admin
         return $timestamp ? wp_date('j.m.Y, H:i', $timestamp) : '—';
     }
 
+    /** Wiersze o Otodom: wynik, liczba ofert tylko z Otodom, połączone duplikaty (z różnicą ceny). */
+    private static function render_otodom_rows($otodom)
+    {
+        if (!$otodom) {
+            return;
+        }
+        if (!$otodom['ok']) {
+            echo '<tr><th>Otodom</th><td><strong>Błąd:</strong> ' . esc_html($otodom['error']) . '<br>Oferty z nieruchomosci-online.pl zaimportowane, oferty z Otodom bez zmian.</td></tr>';
+            return;
+        }
+        printf('<tr><th>Otodom</th><td>%d ofert, w tym %d tylko na Otodom</td></tr>', (int) $otodom['count'], (int) $otodom['only']);
+        if (!$otodom['merged']) {
+            return;
+        }
+        echo '<tr><th>Na obu portalach<br><span class="description">(pokazywane raz)</span></th><td><ul style="margin:0">';
+        foreach ($otodom['merged'] as $pair) {
+            $diff = '';
+            if ((float) $pair['price'] !== (float) $pair['otodom_price']) {
+                $diff = sprintf(' — <strong>inna cena na Otodom: %s zł</strong> (na stronie: %s zł)', number_format((float) $pair['otodom_price'], 0, ',', ' '), number_format((float) $pair['price'], 0, ',', ' '));
+            }
+            printf('<li><a href="%s" target="_blank" rel="noopener">%s ↗</a>%s</li>', esc_url($pair['otodom_url']), esc_html($pair['title']), $diff);
+        }
+        echo '</ul></td></tr>';
+    }
+
     public static function render()
     {
         $log        = get_option(Peritus_Importer::LOG_OPTION);
@@ -53,9 +78,10 @@ class Peritus_Admin
         $next_run   = wp_next_scheduled(Peritus_Importer::CRON_HOOK);
         ?>
         <div class="wrap">
-            <h1>Import ofert z nieruchomosci-online.pl</h1>
-            <p>Oferty dodajesz na portalu. Raz dziennie WordPress pobiera je stamtąd i aktualizuje stronę.
-                Oferty zdjęte z portalu trafiają do szkiców; ustawienia „Wyróżniona” i „Ukryta” zostają.</p>
+            <h1>Import ofert z nieruchomosci-online.pl i Otodom</h1>
+            <p>Oferty dodajesz na portalach. Raz dziennie WordPress pobiera je stamtąd i aktualizuje stronę.
+                Oferta wystawiona na obu portalach pojawia się na stronie raz (w wersji z nieruchomosci-online.pl).
+                Oferty zdjęte z portali trafiają do szkiców; ustawienia „Wyróżniona” i „Ukryta” zostają.</p>
 
             <?php if (isset($_GET['done'])) : ?>
                 <div class="notice <?php echo $log && $log['ok'] ? 'notice-success' : 'notice-error'; ?> is-dismissible">
@@ -72,7 +98,8 @@ class Peritus_Admin
                     <?php if ($log['ok']) : ?>
                         <tr><th>Nowe / zmienione</th><td><?php echo (int) $log['created'] . ' / ' . (int) $log['updated']; ?></td></tr>
                         <tr><th>Bez zmian</th><td><?php echo (int) $log['unchanged']; ?></td></tr>
-                        <tr><th>Zdjęte z portalu</th><td><?php echo (int) $log['removed']; ?></td></tr>
+                        <tr><th>Zdjęte z portali</th><td><?php echo (int) $log['removed']; ?></td></tr>
+                        <?php self::render_otodom_rows(isset($log['otodom']) ? $log['otodom'] : null); ?>
                     <?php endif; ?>
                     </tbody>
                 </table>

@@ -1,6 +1,6 @@
 <?php
 /**
- * Import ofert agenta z nieruchomosci-online.pl do typu „Oferta”.
+ * Import ofert agenta z nieruchomosci-online.pl (+ opcjonalnie Otodom) do typu „Oferta”.
  *
  * Port 1:1 skryptu scripts/sync-nieruchomosci-online.mjs (te same reguły
  * parsowania i te same slugi → adresy ofert na stronie się nie zmieniają).
@@ -11,6 +11,11 @@
  * Bezpieczeństwo danych: najpierw pobieramy i parsujemy WSZYSTKIE ogłoszenia;
  * dopiero gdy całość się powiedzie, zapisujemy zmiany. Każdy błąd = przerwanie
  * bez dotykania istniejących ofert (np. po zmianie szablonu portalu).
+ *
+ * Otodom (Peritus_Otodom) jest źródłem dodatkowym: jego awaria nie blokuje importu
+ * z nieruchomosci-online.pl, a oferty z Otodom zostają wtedy bez zmian. Oferta
+ * wystawiona na obu portalach trafia na stronę raz — w wersji z nieruchomosci-online.pl
+ * (bogatsze szczegóły, stabilne adresy), z zapamiętanym linkiem do Otodom.
  */
 
 if (!defined('ABSPATH')) {
@@ -26,6 +31,17 @@ class Peritus_Importer
 
     /** Wiersze tabeli szczegółów, których nie pokazujemy jako „cechy”. */
     const SKIPPED_DETAILS = array('Typ oferty', 'Cena', 'Źródło', 'Adres');
+
+    /**
+     * Duplikat = ten sam typ, pokoje i metraż co do 0,01 m² (portale podają go z ogłoszenia
+     * Damiana, więc się zgadza), to samo piętro, gdy oba portale je znają, i pinezki
+     * najwyżej 500 m od siebie (portale geokodują inaczej — w praktyce 15–300 m).
+     * Cena NIE jest kryterium (może się rozjechać) — różnica trafia do logu importu.
+     * Przykład z życia: dwa lokale w Koninku z tym samym opisem, 55,61 vs 55,63 m²,
+     * piętro 1 vs 2 — to różne mieszkania i reguła ich nie łączy.
+     */
+    const MATCH_AREA_TOLERANCE = 0.015;
+    const MATCH_MAX_DISTANCE   = 500;
 
     public static function run_scheduled()
     {
@@ -43,7 +59,10 @@ class Peritus_Importer
             @set_time_limit(300); // ~1 s przerwy na ogłoszenie, żeby nie obciążać portalu
         }
 
-        $log = array('time' => time(), 'trigger' => $trigger, 'ok' => false, 'created' => 0, 'updated' => 0, 'removed' => 0, 'unchanged' => 0, 'error' => '');
+        $log = array(
+            'time' => time(), 'trigger' => $trigger, 'ok' => false, 'created' => 0, 'updated' => 0, 'removed' => 0, 'unchanged' => 0, 'error' => '',
+            'otodom' => array('ok' => false, 'count' => 0, 'only' => 0, 'merged' => array(), 'error' => ''),
+        );
 
         try {
             $offers = self::parse_agent_page(self::fetch(self::AGENT_URL));
@@ -57,9 +76,22 @@ class Peritus_Importer
                 $properties[] = self::to_property($offer, self::fetch($offer['url']));
             }
 
+            // Otodom: błąd = log + oferty z Otodom zostają bez zmian (save() ich nie zdejmuje).
+            $otodom_ok = false;
+            try {
+                $otodom = Peritus_Otodom::fetch_all();
+                list($properties, $log['otodom']['merged']) = self::merge($properties, $otodom);
+                $otodom_ok              = true;
+                $log['otodom']['ok']    = true;
+                $log['otodom']['count'] = count($otodom);
+                $log['otodom']['only']  = count($otodom) - count($log['otodom']['merged']);
+            } catch (Exception $e) {
+                $log['otodom']['error'] = $e->getMessage();
+            }
+
             Peritus_Revalidate::$suspended = true;
             try {
-                $counts = self::save($properties);
+                $counts = self::save($properties, $otodom_ok);
             } finally {
                 Peritus_Revalidate::$suspended = false;
             }
@@ -77,14 +109,72 @@ class Peritus_Importer
 
     // --- zapis ------------------------------------------------------------------
 
-    private static function save(array $properties)
+    /**
+     * Oferty z nieruchomosci-online.pl + oferty tylko z Otodom. Duplikaty z Otodom nie
+     * tworzą osobnych ofert — dopisują link do pary z nieruchomosci-online.pl.
+     *
+     * @return array [lista ofert, lista połączonych par do logu]
+     */
+    private static function merge(array $properties, array $otodom)
+    {
+        $merged = array();
+        $paired = array();
+        foreach ($otodom as $candidate) {
+            foreach ($properties as $index => $property) {
+                if (!isset($paired[$index]) && self::is_duplicate($property, $candidate)) {
+                    $paired[$index]                    = true;
+                    $properties[$index]['otodomUrl']   = $candidate['sourceUrl'];
+                    $merged[] = array(
+                        'title'        => $property['title'],
+                        'otodom_url'   => $candidate['sourceUrl'],
+                        'price'        => $property['price'],
+                        'otodom_price' => $candidate['price'],
+                    );
+                    continue 2;
+                }
+            }
+            $properties[] = $candidate;
+        }
+        return array($properties, $merged);
+    }
+
+    private static function is_duplicate(array $a, array $b)
+    {
+        if ($a['type'] !== $b['type'] || $a['bedrooms'] !== $b['bedrooms'] || abs($a['area'] - $b['area']) > self::MATCH_AREA_TOLERANCE) {
+            return false;
+        }
+        $floor_a = $a['match']['floor'];
+        $floor_b = $b['match']['floor'];
+        if ($floor_a !== null && $floor_b !== null && $floor_a !== $floor_b) {
+            return false;
+        }
+        if ($a['match']['lat'] === null || $b['match']['lat'] === null) {
+            return false; // bez współrzędnych nie łączymy „na ślepo”
+        }
+        return self::distance($a['match'], $b['match']) <= self::MATCH_MAX_DISTANCE;
+    }
+
+    /** Odległość w metrach (przybliżenie równoprostokątne — wystarcza na setki metrów). */
+    private static function distance(array $a, array $b)
+    {
+        $x = deg2rad($b['lon'] - $a['lon']) * cos(deg2rad(($a['lat'] + $b['lat']) / 2));
+        $y = deg2rad($b['lat'] - $a['lat']);
+        return 6371000 * sqrt($x * $x + $y * $y);
+    }
+
+    private static function save(array $properties, $otodom_ok)
     {
         $counts = array('created' => 0, 'updated' => 0, 'removed' => 0, 'unchanged' => 0);
         $seen   = array();
 
         foreach ($properties as $position => $property) {
-            $post_id = Peritus_Offers::find_by_source_id($property['id']);
-            $hash    = md5(wp_json_encode($property) . $position);
+            unset($property['match']); // tylko do wykrywania duplikatów
+            $post_id = Peritus_Offers::find_by_source_id($property['id'], $property['source']);
+            // Otodom niedostępny → nie gub zapamiętanego linku do pary z Otodom.
+            if (!$otodom_ok && $post_id && $property['source'] === 'no') {
+                $property['otodomUrl'] = (string) Peritus_Offers::get_meta($post_id, 'otodom_url');
+            }
+            $hash = md5(wp_json_encode($property) . $position);
             $seen[]  = $post_id;
 
             if ($post_id && get_post_status($post_id) === 'publish' && Peritus_Offers::get_meta($post_id, 'hash') === $hash) {
@@ -98,7 +188,7 @@ class Peritus_Importer
                 'post_title'   => $property['title'],
                 'post_name'    => $property['slug'],
                 'post_content' => $property['description'],
-                // Kolejność jak na profilu agenta (portal pokazuje najnowsze na górze).
+                // Kolejność jak na profilu agenta (najnowsze na górze), oferty tylko z Otodom na końcu.
                 'menu_order'   => $position,
             );
 
@@ -118,7 +208,9 @@ class Peritus_Importer
 
             $m = Peritus_Offers::META;
             update_post_meta($post_id, $m['source_id'], (string) $property['id']);
+            update_post_meta($post_id, $m['source'], $property['source']);
             update_post_meta($post_id, $m['source_url'], $property['sourceUrl']);
+            update_post_meta($post_id, $m['otodom_url'], $property['otodomUrl']);
             update_post_meta($post_id, $m['location'], $property['location']);
             update_post_meta($post_id, $m['price'], $property['price']);
             update_post_meta($post_id, $m['area'], $property['area']);
@@ -130,6 +222,18 @@ class Peritus_Importer
             update_post_meta($post_id, $m['gallery'], wp_slash(wp_json_encode($property['gallery'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)));
             update_post_meta($post_id, $m['features'], wp_slash(wp_json_encode($property['features'], JSON_UNESCAPED_UNICODE)));
             update_post_meta($post_id, $m['hash'], $hash);
+        }
+
+        // Otodom niedostępny → jego oferty zostają jak były (nie wiemy, czy zdjęte).
+        if (!$otodom_ok) {
+            $seen = array_merge($seen, get_posts(array(
+                'post_type'      => Peritus_Offers::POST_TYPE,
+                'post_status'    => 'publish',
+                'fields'         => 'ids',
+                'posts_per_page' => -1,
+                'meta_key'       => Peritus_Offers::META['source'],
+                'meta_value'     => 'otodom',
+            )));
         }
 
         // Oferty zdjęte z portalu → szkic (nie usuwamy: historia + flagi zostają).
@@ -149,7 +253,8 @@ class Peritus_Importer
 
     // --- pobieranie i parsowanie (port skryptu Node) ----------------------------------
 
-    private static function fetch($url)
+    /** Pobranie strony portalu (współdzielone z Peritus_Otodom). */
+    public static function fetch($url)
     {
         $response = wp_remote_get($url, array('timeout' => 20, 'headers' => array('User-Agent' => self::USER_AGENT)));
         if (is_wp_error($response)) {
@@ -177,7 +282,7 @@ class Peritus_Importer
         return trim($text);
     }
 
-    private static function slugify($text)
+    public static function slugify($text)
     {
         $text = mb_strtolower($text, 'UTF-8');
         $text = str_replace('ł', 'l', $text);
@@ -378,6 +483,19 @@ class Peritus_Importer
             }
         }
 
+        // Piętro lokalu (do wykrywania duplikatów): JSON-LD albo „piętro 0/4” / „parter” z tabeli.
+        $floor = $prop('Floor level');
+        if (is_numeric($floor)) {
+            $floor = (int) $floor;
+        } elseif (preg_match('/piętro (-?\d+)/u', $layout, $m)) {
+            $floor = (int) $m[1];
+        } elseif (preg_match('/parter/u', (string) $floor . ' ' . $layout)) {
+            $floor = 0;
+        } else {
+            $floor = null;
+        }
+        $geo = isset($ld['geo']) ? $ld['geo'] : array();
+
         return array(
             'id'          => $offer['id'],
             'slug'        => self::slugify($title . ' ' . (strpos($title, $city) !== false ? '' : $city)) . '-' . $offer['id'],
@@ -394,6 +512,13 @@ class Peritus_Importer
             'features'    => $features,
             'gallery'     => $photos,
             'sourceUrl'   => $offer['url'],
+            'source'      => 'no',
+            'otodomUrl'   => '',
+            'match'       => array(
+                'lat'   => isset($geo['latitude']) && is_numeric($geo['latitude']) ? (float) $geo['latitude'] : null,
+                'lon'   => isset($geo['longitude']) && is_numeric($geo['longitude']) ? (float) $geo['longitude'] : null,
+                'floor' => $floor,
+            ),
         );
     }
 }
