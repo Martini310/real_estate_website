@@ -5,6 +5,7 @@ import Link from "next/link";
 import { gsap } from "gsap";
 import AgentCard from "./AgentCard";
 import ContactForm from "./ContactForm";
+import PropertyDescription from "./PropertyDescription";
 import PropertyGallery, { GALLERY_CONTROL } from "./PropertyGallery";
 import Button, { ButtonLink } from "./ui/Button";
 import PhoneIcon from "./ui/PhoneIcon";
@@ -163,13 +164,7 @@ export default function PropertyDetailContent({ property, onBack, backHref, titl
             {/* Opis */}
             <section className="border-b border-line py-8">
               <h2 className="mb-4 text-h3 text-text-primary">O nieruchomości</h2>
-              <div className="space-y-4">
-                {property.description.split("\n").map((paragraph, idx) => (
-                  <p key={idx} className="max-w-prose text-body text-text-secondary">
-                    {paragraph}
-                  </p>
-                ))}
-              </div>
+              <PropertyDescription text={property.description} />
             </section>
 
             {/* Cechy */}

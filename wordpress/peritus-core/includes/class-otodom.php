@@ -142,10 +142,14 @@ class Peritus_Otodom
         return null;
     }
 
-    /** Opis HTML (akapity, listy) → tekst z akapitami w osobnych liniach, jak z nieruchomosci-online. */
+    /**
+     * Opis HTML (akapity, listy) → tekst z akapitami w osobnych liniach, jak z nieruchomosci-online.
+     * Pozycje list dostają „- ”, żeby strona (lib/description.ts) rozpoznała listę po znaczniku.
+     */
     private static function description_text($html)
     {
-        $text  = preg_replace('/<\s*(br|\/p|\/li|\/h\d|\/div)\s*\/?>/i', "\n", (string) $html);
+        $text  = preg_replace('/<li\b[^>]*>/i', "\n- ", (string) $html);
+        $text  = preg_replace('/<\s*(br|\/p|\/li|\/h\d|\/div)\s*\/?>/i', "\n", $text);
         $text  = html_entity_decode(strip_tags($text), ENT_QUOTES | ENT_HTML5, 'UTF-8');
         $lines = array_filter(array_map(function ($line) {
             return trim(preg_replace('/\s+/u', ' ', $line));
