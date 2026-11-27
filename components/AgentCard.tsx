@@ -2,6 +2,7 @@ import Image from "next/image";
 import { ButtonLink } from "./ui/Button";
 import PhoneIcon from "./ui/PhoneIcon";
 import { Agent } from "@/types/property";
+import { siteConfig } from "@/lib/site";
 
 interface AgentCardProps {
   agent: Agent;
@@ -22,7 +23,10 @@ export default function AgentCard({ agent }: AgentCardProps) {
 
       <div className="flex-1">
         <h3 className="text-text-primary text-h3 mb-1">{agent.name}</h3>
-        <p className="text-text-secondary text-small mb-3">Pośrednik w obrocie nieruchomościami</p>
+        {/* Licencja tutaj, bo z opisu oferty wycinamy podpis agenta (lib/description.ts) */}
+        <p className="text-text-secondary text-small mb-3">
+          {siteConfig.role}, licencja zawodowa nr {siteConfig.licenseNumber}
+        </p>
 
         <div className="flex flex-wrap gap-2">
           {/* Numer widoczny, nie tylko „Zadzwoń” — na komputerze `tel:` często nic nie otwiera */}

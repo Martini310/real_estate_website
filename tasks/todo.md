@@ -498,3 +498,26 @@ Ryzyka do decyzji właściciela: Otodom (Grupa OLX) chroni się przed botami (Da
 - **Next** na lokalnym WP: 13 kart, zdjęcia z `ireland.apollo.olxcdn.com` przez `next/image`, strona oferty z Otodom (16 zdjęć, opis, parametry; łazienki ukryte — Otodom ich nie podaje). `tsc` 0, `next build` OK. PHP lint 7.4 + 8.3.
 - **Poza zakresem**: `scripts/sync-nieruchomosci-online.mjs` (plik awaryjny `data/properties.json`) nadal tylko NO — awaryjnie strona pokaże oferty bez tych tylko z Otodom. W konsoli `/oferty` jest błąd hydratacji `useId` w `FilterBar` (istniał wcześniej, niezwiązany z importem).
 - **Do sprawdzenia po wdrożeniu**: czy Otodom nie blokuje serwera TLD.pl (wiersz „Otodom” w Import z portali).
+
+## Formatowanie opisów ofert (etap 1: reguły, bez AI) ✅ ZROBIONE (2026-11-27)
+
+Problem: opisy z portali to gołe linie (importer spłaszcza `<br>`/HTML), a strona robi z każdej linii akapit — śródtytuły, listy i „Etykieta: wartość” wyglądają tak samo; na końcu podpis agenta i formułka prawna. Treść ma zostać ta sama (zmiany tylko w interpunkcji list i wielkości liter przy KRZYCZĄCYCH wstępach).
+
+- [x] `lib/description.ts`: czysta funkcja `formatDescription(text)` → bloki `lead | heading | paragraph | list | facts` + `disclaimer`; reguły z 13 realnych opisów (NO + Otodom):
+  - pierwsza linia-hasło („… | … | …”) → lead („ | ” → „, ”); linia „Opis nieruchomości” → usunięta (dubluje nagłówek sekcji)
+  - śródtytuł: krótka linia bez kropki albo krótka linia zakończona „:”; „Parter (54,70 m²) …” → podtytuł z metrażem
+  - lista: linie z „- ”, linie małą literą / z przecinkiem na końcu w sąsiedztwie listy, serie krótkich linii pod nagłówkiem (Otodom gubi `<li>`)
+  - lista „Etykieta: wartość” z krótkimi wartościami → tabelka (etykieta | wartość)
+  - podpis agenta (imię, „Pośrednik…”, „Licencja…”) usunięty — jest karta opiekuna; formułka prawna → drobny tekst na końcu
+- [x] `PropertyDetailContent`: render bloków (styl spójny z sekcją „Najważniejsze cechy”, bez ozdobników)
+- [x] Otodom: `<li>` → „- ” w `class-otodom.php` (lista zachowana u źródła)
+- [x] Karta opiekuna: „Pośrednik w obrocie nieruchomościami, licencja zawodowa nr 23975” (licencję wycinamy z opisu, więc pokazujemy ją tutaj)
+- [x] Weryfikacja: wszystkie 13 opisów w przeglądarce (panel + podstrona, desktop + telefon), `tsc`, `next build`
+
+### Review — formatowanie opisów (2026-11-27)
+
+- **Dane testowe**: 13 ofert z lokalnego WP (NO + Otodom) + świeży scrap NO (Kosynierów, Luboń) = 15 opisów. Wszystkie rozpoznane sensownie: śródtytuły (w tym „Parter 54,70 m²” jako podtytuł), listy z myślnikami i bez, tabelki „etykieta: wartość”, hasło nad opisem, podpis i formułka.
+- **Treść nietknięta (automatyczna kontrola słów)**: w każdym opisie ubywa tylko podpis (imię, „Pośrednik w obrocie…”, „Licencja zawodowa nr 23975”) i linia „Opis nieruchomości”; nie przybywa żadne słowo.
+- **Otodom z `<li>` → „- ”**: po ponownym imporcie wynik formatera dla 4 ofert tylko z Otodom identyczny jak przed (reguły nie zależą od znaczników, znacznik tylko je upewnia). PHP lint OK, test konwersji (`<link>` nie mylony z `<li>`).
+- **Przeglądarka**: podstrona (Okrężna, desktop 1440), panel z listy (Koninko z Otodom, wiersz bez etykiety w tabelce), telefon 375 (Łokietka — brak poziomego przewijania, karta opiekuna z licencją). Konsola bez błędów. `tsc` 0, `next build` OK.
+- **Ograniczenia reguł**: myślniki „–” gubi sam portal NO (w HTML ich nie ma), więc np. „Lokalizacja Gruszczyn, ul. Okrężna 28” zostaje bez myślnika; zlepki w źródle („sklepy (Dino, Żabka), - szkoła…”) zostają jak są. Nowy, nietypowy układ opisu w najgorszym razie wyświetli się jako zwykłe akapity — tak jak dotąd.
